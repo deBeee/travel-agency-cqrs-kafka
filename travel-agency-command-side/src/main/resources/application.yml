@@ -1,0 +1,19 @@
+server:
+  port: ${SERVER_PORT}
+
+spring:
+  application:
+    name: travel-agency-command-side
+
+  datasource:
+    url: ${SPRING_APPLICATION_NAME}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect

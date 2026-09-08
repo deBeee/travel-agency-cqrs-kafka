@@ -1,0 +1,70 @@
+services:
+  mysql:
+    image: mysql:9.7.0
+    restart: unless-stopped
+    volumes:
+      - mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB_NAME}
+      MYSQL_USER: ${MYSQL_DB_USER}
+      MYSQL_PASSWORD: ${MYSQL_DB_PASSWORD}
+      MYSQL_TCP_PORT: 3307
+    command: --default-time-zone='+00:00'
+    ports:
+      - '${MYSQL_DB_PORT}:3307'
+    expose:
+      - ${MYSQL_DB_PORT}
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost",  "-u", "${MYSQL_DB_USER}", "-p${MYSQL_DB_PASSWORD}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    networks:
+      - my-network
+
+  travel-agency-command-side:
+    build:
+      context: ./travel-agency-command-side
+      dockerfile: Dockerfile
+    restart: on-failure:10
+    ports:
+      - "${COMMAND_SIDE_SERVICE_PORT}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: ${COMMAND_SIDE_SERVICE_APPLICATION_NAME}
+      SERVER_PORT: ${COMMAND_SIDE_SERVICE_PORT}
+      SPRING_DATASOURCE_URL: jdbc:mysql://${MYSQL_DB_HOST}:${MYSQL_DB_PORT}/${MYSQL_DB_NAME}?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_DB_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: "1.0"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    networks:
+      - my-network
+
+volumes:
+  mysql:
+
+networks:
+  my-network:
