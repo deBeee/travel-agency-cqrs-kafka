@@ -1,8 +1,8 @@
 package io.github.debeee.travelagency.command.presentation.controller;
 
 import io.github.debeee.travelagency.command.application.port.in.CreateHotelUseCase;
-import io.github.debeee.travelagency.command.presentation.dto.CreateHotelRequestDto;
-import io.github.debeee.travelagency.command.presentation.dto.CreateHotelResponseDto;
+import io.github.debeee.travelagency.command.presentation.dto.hotel.CreateHotelRequestDto;
+import io.github.debeee.travelagency.command.presentation.dto.hotel.CreateHotelResponseDto;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -18,8 +18,7 @@ public class HotelController {
 
     private final CreateHotelUseCase createHotelUseCase;
 
-    public HotelController(
-            @Qualifier("transactionalCreateHotelUseCase") CreateHotelUseCase createHotelUseCase) {
+    public HotelController(@Qualifier("transactionalCreateHotelUseCase") CreateHotelUseCase createHotelUseCase) {
         this.createHotelUseCase = createHotelUseCase;
     }
 

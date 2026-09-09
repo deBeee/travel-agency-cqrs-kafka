@@ -1,6 +1,6 @@
 package io.github.debeee.travelagency.command.presentation.exception;
 
-
+import io.github.debeee.travelagency.command.application.exception.ResourceNotFoundException;
 import io.github.debeee.travelagency.command.presentation.dto.error.ErrorResponseDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
@@ -20,13 +24,22 @@ public class GlobalExceptionHandler {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
 
-        return ResponseEntity.badRequest().body(new ErrorResponseDto("Validation error", errors));
+        return ResponseEntity
+                .status(BAD_REQUEST)
+                .body(new ErrorResponseDto("Validation error", errors));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponseDto> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity
-                .badRequest()
+                .status(BAD_REQUEST)
+                .body(new ErrorResponseDto(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        return ResponseEntity
+                .status(NOT_FOUND)
                 .body(new ErrorResponseDto(ex.getMessage()));
     }
 
@@ -34,7 +47,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handleGlobalException(Exception ex) {
         log.error(ex.getMessage(), ex);
         return ResponseEntity
-                .internalServerError()
+                .status(INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponseDto("Unexpected error occurred"));
     }
 }

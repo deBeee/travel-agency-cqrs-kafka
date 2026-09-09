@@ -5,8 +5,7 @@ import io.github.debeee.travelagency.command.infrastructure.persistence.entity.H
 import org.springframework.stereotype.Component;
 
 @Component
-public class TravelMapper {
-
+public class HotelMapper {
     public Hotel toHotelDomain(HotelEntity entity) {
         return new Hotel(
                 entity.getId(),

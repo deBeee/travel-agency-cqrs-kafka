@@ -1,14 +1,14 @@
 server:
-  port: ${SERVER_PORT}
+  port: ${SERVER_PORT:8080}
 
 spring:
   application:
-    name: travel-agency-command-side
+    name: ${SPRING_APPLICATION_NAME:travel-agency-command-side}
 
   datasource:
-    url: ${SPRING_APPLICATION_NAME}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/travels_write_db}
+    username: ${SPRING_DATASOURCE_USERNAME:user}
+    password: ${SPRING_DATASOURCE_PASSWORD:user1234}
 
   jpa:
     hibernate:
