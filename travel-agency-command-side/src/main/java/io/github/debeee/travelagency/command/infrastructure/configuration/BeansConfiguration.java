@@ -1,4 +1,4 @@
-package io.github.debeee.travelagency.command.infrastructure.persistence.configuration;
+package io.github.debeee.travelagency.command.infrastructure.configuration;
 
 import io.github.debeee.travelagency.command.application.port.in.CreateHotelUseCase;
 import io.github.debeee.travelagency.command.application.port.out.HotelRepository;

@@ -32,7 +32,7 @@ services:
         max-size: "50m"
         max-file: "3"
     networks:
-      - my-network
+      - travel-agency-network
 
   travel-agency-command-side:
     build:
@@ -61,10 +61,10 @@ services:
         max-size: "50m"
         max-file: "3"
     networks:
-      - my-network
+      - travel-agency-network
 
 volumes:
   mysql:
 
 networks:
-  my-network:
+  travel-agency-network:
