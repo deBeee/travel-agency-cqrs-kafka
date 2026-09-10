@@ -14,10 +14,6 @@ public class HotelService implements CreateHotelUseCase {
 
     @Override
     public Long createHotel(long capacity) {
-        if (capacity <= 0) {
-            throw new IllegalArgumentException("Capacity must be positive");
-        }
-
         Hotel saved = hotelRepository.saveHotel(new Hotel(null, capacity));
         return saved.getId();
     }

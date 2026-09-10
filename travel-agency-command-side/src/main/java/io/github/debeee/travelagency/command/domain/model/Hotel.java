@@ -5,6 +5,9 @@ public class Hotel {
     private final long capacity;
 
     public Hotel(Long id, long capacity) {
+        if (capacity <= 0) {
+            throw new IllegalArgumentException("Capacity must be positive");
+        }
         this.id = id;
         this.capacity = capacity;
     }

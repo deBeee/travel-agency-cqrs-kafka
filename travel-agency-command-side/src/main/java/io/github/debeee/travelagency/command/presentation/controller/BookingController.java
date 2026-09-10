@@ -20,7 +20,7 @@ public class BookingController {
 
     private final CreateBookingUseCase createBookingUseCase;
 
-    public BookingController(@Qualifier("transactionalCreateBookingUseCase") CreateBookingUseCase createBookingUseCase) {
+    public BookingController(@Qualifier("retryingCreateBookingUseCase") CreateBookingUseCase createBookingUseCase) {
         this.createBookingUseCase = createBookingUseCase;
     }
 
