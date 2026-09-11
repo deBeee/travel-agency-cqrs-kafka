@@ -5,8 +5,10 @@ import io.github.debeee.travelagency.command.application.port.in.CreateHotelUseC
 import io.github.debeee.travelagency.command.application.port.out.AvailabilityRepository;
 import io.github.debeee.travelagency.command.application.port.out.BookingRepository;
 import io.github.debeee.travelagency.command.application.port.out.HotelRepository;
+import io.github.debeee.travelagency.command.application.port.out.OutboxRepository;
 import io.github.debeee.travelagency.command.application.service.BookingService;
 import io.github.debeee.travelagency.command.application.service.HotelService;
+import io.github.debeee.travelagency.command.domain.model.Booking;
 import io.github.debeee.travelagency.command.infrastructure.tx.RetryingCreateBookingUseCase;
 import io.github.debeee.travelagency.command.infrastructure.tx.TransactionalCreateBookingUseCase;
 import io.github.debeee.travelagency.command.infrastructure.tx.TransactionalCreateHotelUseCase;
@@ -25,8 +27,9 @@ public class BeansConfiguration {
     @Bean
     BookingService bookingService(HotelRepository hotelRepository,
                                   BookingRepository bookingRepository,
-                                  AvailabilityRepository availabilityRepository) {
-        return new BookingService(hotelRepository, bookingRepository, availabilityRepository);
+                                  AvailabilityRepository availabilityRepository,
+                                  OutboxRepository<Booking> bookingOutboxRepository) {
+        return new BookingService(hotelRepository, bookingRepository, availabilityRepository, bookingOutboxRepository);
     }
 
     @Bean

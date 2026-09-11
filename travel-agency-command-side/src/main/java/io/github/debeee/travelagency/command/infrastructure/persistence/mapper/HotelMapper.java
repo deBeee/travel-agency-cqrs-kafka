@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class HotelMapper {
+    
     public Hotel toHotelDomain(HotelEntity entity) {
         return new Hotel(
                 entity.getId(),

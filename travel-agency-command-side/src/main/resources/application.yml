@@ -17,3 +17,10 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+
+kafka:
+  topic:
+    bookings:
+      name: ${TOPIC_BOOKINGS:travel.bookings}
+      partitions: 3
+      replicas: 1

@@ -6,6 +6,7 @@ import io.github.debeee.travelagency.command.application.port.in.CreateBookingUs
 import io.github.debeee.travelagency.command.application.port.out.AvailabilityRepository;
 import io.github.debeee.travelagency.command.application.port.out.BookingRepository;
 import io.github.debeee.travelagency.command.application.port.out.HotelRepository;
+import io.github.debeee.travelagency.command.application.port.out.OutboxRepository;
 import io.github.debeee.travelagency.command.domain.model.Booking;
 
 public class BookingService implements CreateBookingUseCase {
@@ -13,13 +14,16 @@ public class BookingService implements CreateBookingUseCase {
     private final HotelRepository hotelRepository;
     private final BookingRepository bookingRepository;
     private final AvailabilityRepository availabilityRepository;
+    private final OutboxRepository<Booking> bookingOutboxRepository;
 
     public BookingService(HotelRepository hotelRepository,
                           BookingRepository bookingRepository,
-                          AvailabilityRepository availabilityRepository) {
+                          AvailabilityRepository availabilityRepository,
+                          OutboxRepository<Booking> bookingOutboxRepository) {
         this.hotelRepository = hotelRepository;
         this.bookingRepository = bookingRepository;
         this.availabilityRepository = availabilityRepository;
+        this.bookingOutboxRepository = bookingOutboxRepository;
     }
 
     @Override
@@ -41,6 +45,8 @@ public class BookingService implements CreateBookingUseCase {
 
         var newBooking = new Booking(null, hotelId, command.userId(), command.start(), command.end());
         var saved = bookingRepository.save(newBooking);
+
+        bookingOutboxRepository.saveOutbox(saved);
 
         return saved.id();
     }
