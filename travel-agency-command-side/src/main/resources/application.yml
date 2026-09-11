@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: ${SPRING_APPLICATION_NAME:travel-agency-command-side}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    properties:
+      schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL}
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/travels_write_db}
@@ -19,8 +23,12 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
 kafka:
-  topic:
+  topics:
     bookings:
-      name: ${TOPIC_BOOKINGS:travel.bookings}
+      name: ${TOPIC_BOOKINGS}
       partitions: 3
       replicas: 1
+  outbox:
+    poll-interval: 1000
+    batch-size: 50
+    max-retries: 5

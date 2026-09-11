@@ -44,12 +44,19 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: ${COMMAND_SIDE_SERVICE_APPLICATION_NAME}
       SERVER_PORT: ${COMMAND_SIDE_SERVICE_PORT}
       SPRING_DATASOURCE_URL: jdbc:mysql://${MYSQL_DB_HOST}:${MYSQL_DB_PORT}/${MYSQL_DB_NAME}?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: ${MYSQL_DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      KAFKA_SCHEMA_REGISTRY_URL: ${KAFKA_SCHEMA_REGISTRY_URL}
+      TOPIC_BOOKINGS: ${TOPIC_BOOKINGS}
     deploy:
       resources:
         limits:
@@ -63,8 +70,69 @@ services:
     networks:
       - travel-agency-network
 
+  # --------------------------------------------------------------------------------------------------------------------
+  # KAFKA
+  # --------------------------------------------------------------------------------------------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka-single
+    hostname: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    env_file:
+      - .env
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: [ "CMD", "bash", "-c", "kafka-topics --bootstrap-server localhost:9092 --list" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - travel-agency-network
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.0
+    container_name: schema-registry
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8200:8200"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8200
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8200/subjects" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - travel-agency-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:0.3.3
+    container_name: kafka-ui
+    ports:
+      - "8100:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=kraft-cluster
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_KAFKACONNECT_ENABLED=false
+      - KAFKA_CLUSTERS_0_SCHEMAREGISTRY=http://schema-registry:8200
+    depends_on:
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    networks:
+      - travel-agency-network
+
 volumes:
   mysql:
+  kafka-data:
 
 networks:
   travel-agency-network:

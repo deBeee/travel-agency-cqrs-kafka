@@ -1,8 +1,8 @@
-package io.github.debeee.travelagency.command.infrastructure.configuration.properties;
+package io.github.debeee.travelagency.command.infrastructure.kafka.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "kafka.topic.bookings")
+@ConfigurationProperties(prefix = "kafka.topics.bookings")
 public record BookingTopicProperties(
         String name,
         int partitions,
