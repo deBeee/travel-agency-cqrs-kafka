@@ -10,6 +10,7 @@ import io.github.debeee.travelagency.command.infrastructure.persistence.reposito
 import io.github.debeee.travelagency.command.infrastructure.persistence.repository.JpaOutboxRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.data.domain.PageRequest;
@@ -36,6 +37,7 @@ public class OutboxScheduler {
     private final KafkaTemplate<String, SpecificRecordBase> kafkaTemplate;
 
     @Scheduled(fixedDelayString =  "${kafka.outbox.poll-interval}")
+    @SchedulerLock(name = "travel_outbox_processor", lockAtMostFor = "30s", lockAtLeastFor = "1s")
     public void processOutbox() {
         List<OutboxEntity> entries = jpaOutboxRepository.findAllByOrderByCreatedAtAsc(
                 PageRequest.of(0, outboxProperties.batchSize())
@@ -61,15 +63,15 @@ public class OutboxScheduler {
                 ? entry.getTopic()
                 : bookingTopicProperties.name();
 
-        var record = new ProducerRecord<>(topic, entry.getAggregateId(), avro);
+        var producerRecord = new ProducerRecord<>(topic, entry.getAggregateId(), avro);
 
-        record.headers().add(
+        producerRecord.headers().add(
                 "eventType",
                 entry.getType().getBytes(StandardCharsets.UTF_8)
         );
 
         try {
-            kafkaTemplate.send(record).get();
+            kafkaTemplate.send(producerRecord).get();
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             throw new OutboxSendException("Interrupted while sending outbox entry " + entry.getId(), ie);

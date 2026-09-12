@@ -13,6 +13,15 @@ management:
 spring:
   application:
     name: ${SPRING_APPLICATION_NAME:travel-agency-command-side}
+    
+  threads:
+    virtual:
+      enabled: true
+  
+  sql:
+    init:
+      mode: always
+      
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     properties:
@@ -27,6 +36,11 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/travels_write_db}
     username: ${SPRING_DATASOURCE_USERNAME:user}
     password: ${SPRING_DATASOURCE_PASSWORD:user1234}
+    hikari:
+      maximum-pool-size: 20
+      connection-timeout: 2000
+      keepalive-time: 30000
+      max-lifetime: 1800000
 
   jpa:
     hibernate:
@@ -35,6 +49,10 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+        jdbc:
+          batch_size: 50
+          order_inserts: true
+          order_updates: true
 
 kafka:
   topics:
