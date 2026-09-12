@@ -6,6 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record OutboxProperties(
         long pollInterval,
         int batchSize,
-        int maxRetries
+        int alertAfterRetries
 ) {
 }

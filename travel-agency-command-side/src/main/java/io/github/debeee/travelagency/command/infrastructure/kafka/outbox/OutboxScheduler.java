@@ -39,22 +39,24 @@ public class OutboxScheduler {
     public void processOutbox() {
         List<OutboxEntity> entries = jpaOutboxRepository.findAllByOrderByCreatedAtAsc(
                 PageRequest.of(0, outboxProperties.batchSize())
-        );
+        );  
 
         for (OutboxEntity entry : entries) {
             try {
-                sendToKafka(entry);
+                sendToKafka(entry, toAvro(entry));
                 jpaOutboxRepository.delete(entry);
+            } catch (PayloadConversionException e) {
+                moveToDeadLetter(entry, e);
+                jpaOutboxRepository.delete(entry);
+                log.error("Outbox entry {} moved to dead letter: {}", entry.getId(), e.getMessage());
             } catch (Exception e) {
-                handleFailure(entry, e);
+                handleTransportFailure(entry, e);
                 break;
             }
         }
     }
 
-    private void sendToKafka(OutboxEntity entry) {
-        SpecificRecordBase avro = toAvro(entry);
-
+    private void sendToKafka(OutboxEntity entry, SpecificRecordBase avro) {
         String topic = entry.getTopic() != null
                 ? entry.getTopic()
                 : bookingTopicProperties.name();
@@ -70,9 +72,9 @@ public class OutboxScheduler {
             kafkaTemplate.send(record).get();
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while sending outbox entry", ie);
+            throw new OutboxSendException("Interrupted while sending outbox entry " + entry.getId(), ie);
         } catch (ExecutionException ee) {
-            throw new IllegalStateException("Kafka send failed for outbox entry " + entry.getId(), ee.getCause());
+            throw new OutboxSendException("Kafka send failed for outbox entry " + entry.getId(), ee.getCause());
         }
     }
 
@@ -92,21 +94,20 @@ public class OutboxScheduler {
                 default -> throw new IllegalArgumentException("Unknown event type: " + entry.getType());
             };
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to convert outbox payload to AVRO for entry, type=" + entry.getType(), e);
+            throw new PayloadConversionException("Cannot convert outbox payload to Avro, type=" + entry.getType(), e);
         }
     }
-
-    private void handleFailure(OutboxEntity entry, Exception e) {
+    
+    private void handleTransportFailure(OutboxEntity entry, Exception e) {
         entry.incrementRetryCount();
-        if (entry.hasExceededMaxRetries(outboxProperties.maxRetries())) {
-            moveToDeadLetter(entry, e);
-            jpaOutboxRepository.delete(entry);
-            log.error("Outbox entry {} moved to DLT after {} retries: {}",
-                    entry.getId(), outboxProperties.maxRetries(), e.getMessage());
+        jpaOutboxRepository.save(entry);
+
+        if (entry.hasExceededRetryThreshold(outboxProperties.alertAfterRetries())) {
+            log.error("Outbox entry {} still failing after {} attempts — check broker/network: {}",
+                    entry.getId(), entry.getRetryCount(), e.getMessage());
         } else {
-            jpaOutboxRepository.save(entry);
-            log.warn("Outbox entry {} failed (attempt {}/{}): {}",
-                    entry.getId(), entry.getRetryCount(), outboxProperties.maxRetries(), e.getMessage());
+            log.warn("Outbox entry {} failed (transient, attempt {}): {}. Will retry.",
+                    entry.getId(), entry.getRetryCount(), e.getMessage());
         }
     }
 

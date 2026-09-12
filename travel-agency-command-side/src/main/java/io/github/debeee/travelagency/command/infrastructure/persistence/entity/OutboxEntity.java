@@ -56,7 +56,7 @@ public class OutboxEntity {
         retryCount += 1;
     }
 
-    public boolean hasExceededMaxRetries(int maxRetries) {
-        return retryCount != null && retryCount >= maxRetries;
+    public boolean hasExceededRetryThreshold(int threshold) {
+        return retryCount != null && retryCount >= threshold;
     }
 }
