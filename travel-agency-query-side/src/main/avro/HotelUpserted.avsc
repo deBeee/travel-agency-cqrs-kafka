@@ -1,0 +1,9 @@
+{
+  "type": "record",
+  "name": "HotelUpsertedAvro",
+  "namespace": "io.github.debeee.travelagency.avro",
+  "fields": [
+    {"name": "hotelId", "type": "long"},
+    {"name": "capacity",  "type": "long"}
+  ]
+}
