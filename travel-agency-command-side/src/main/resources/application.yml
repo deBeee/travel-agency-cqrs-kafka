@@ -60,6 +60,10 @@ kafka:
       name: ${TOPIC_BOOKINGS}
       partitions: 3
       replicas: 1
+    hotels:
+      name: ${TOPIC_HOTELS}
+      partitions: 3
+      replicas: 1
   outbox:
     poll-interval: 1000
     batch-size: 50

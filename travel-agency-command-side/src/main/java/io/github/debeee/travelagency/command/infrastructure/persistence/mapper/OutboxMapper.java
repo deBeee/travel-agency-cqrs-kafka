@@ -1,6 +1,6 @@
 package io.github.debeee.travelagency.command.infrastructure.persistence.mapper;
 
-import io.github.debeee.travelagency.command.domain.model.Booking;
+import io.github.debeee.travelagency.command.application.event.OutboxPayload;
 import io.github.debeee.travelagency.command.infrastructure.persistence.entity.OutboxEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -15,19 +15,19 @@ public class OutboxMapper {
 
     private final ObjectMapper objectMapper;
 
-    public OutboxEntity toBookingsOutboxEntity(Booking booking, String bookingTopicName) {
+    public OutboxEntity toOutboxEntity(OutboxPayload event, String topicName, String aggregateId, String eventType) {
         try {
-            String payloadJson = objectMapper.writeValueAsString(booking);
+            String payloadJson = objectMapper.writeValueAsString(event);
 
             return OutboxEntity.builder()
-                    .aggregateId(booking.hotelId().toString())
-                    .type("BookingCreated")
+                    .aggregateId(aggregateId)
+                    .type(eventType)
                     .payload(payloadJson)
-                    .topic(bookingTopicName)
+                    .topic(topicName)
                     .createdAt(LocalDateTime.now())
                     .build();
         } catch (JacksonException e) {
-            throw new IllegalStateException("Error serializing Booking to JSON for Outbox", e);
+            throw new IllegalStateException("Error serializing %s payload to JSON for outbox".formatted(eventType), e);
         }
     }
 }

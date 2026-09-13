@@ -1,7 +1,9 @@
 package io.github.debeee.travelagency.command.infrastructure.kafka.outbox;
 
+import io.github.debeee.travelagency.avro.HotelUpsertedAvro;
 import io.github.debeee.travelagency.avro.BookingCreatedAvro;
-import io.github.debeee.travelagency.command.domain.model.Booking;
+import io.github.debeee.travelagency.command.application.event.BookingCreatedPayload;
+import io.github.debeee.travelagency.command.application.event.HotelUpsertedPayload;
 import io.github.debeee.travelagency.command.infrastructure.kafka.properties.BookingTopicProperties;
 import io.github.debeee.travelagency.command.infrastructure.kafka.properties.OutboxProperties;
 import io.github.debeee.travelagency.command.infrastructure.persistence.entity.DeadLetterEntity;
@@ -36,12 +38,12 @@ public class OutboxScheduler {
     private final ObjectMapper objectMapper;
     private final KafkaTemplate<String, SpecificRecordBase> kafkaTemplate;
 
-    @Scheduled(fixedDelayString =  "${kafka.outbox.poll-interval}")
+    @Scheduled(fixedDelayString = "${kafka.outbox.poll-interval}")
     @SchedulerLock(name = "travel_outbox_processor", lockAtMostFor = "30s", lockAtLeastFor = "1s")
     public void processOutbox() {
         List<OutboxEntity> entries = jpaOutboxRepository.findAllByOrderByCreatedAtAsc(
                 PageRequest.of(0, outboxProperties.batchSize())
-        );  
+        );
 
         for (OutboxEntity entry : entries) {
             try {
@@ -84,13 +86,22 @@ public class OutboxScheduler {
         try {
             return switch (entry.getType()) {
                 case "BookingCreated" -> {
-                    Booking booking = objectMapper.readValue(entry.getPayload(), Booking.class);
+                    BookingCreatedPayload payload = objectMapper.readValue(
+                            entry.getPayload(), BookingCreatedPayload.class);
                     yield BookingCreatedAvro.newBuilder()
-                            .setId(booking.id())
-                            .setHotelId(booking.hotelId())
-                            .setUserId(booking.userId())
-                            .setStart(booking.start().toString())
-                            .setEnd(booking.end().toString())
+                            .setId(payload.id())
+                            .setHotelId(payload.hotelId())
+                            .setUserId(payload.userId())
+                            .setStart(payload.start().toString())
+                            .setEnd(payload.end().toString())
+                            .build();
+                }
+                case "HotelUpserted" -> {
+                    HotelUpsertedPayload payload = objectMapper.readValue(
+                            entry.getPayload(), HotelUpsertedPayload.class);
+                    yield HotelUpsertedAvro.newBuilder()
+                            .setHotelId(payload.hotelId())
+                            .setCapacity(payload.capacity())
                             .build();
                 }
                 default -> throw new IllegalArgumentException("Unknown event type: " + entry.getType());
@@ -99,7 +110,7 @@ public class OutboxScheduler {
             throw new PayloadConversionException("Cannot convert outbox payload to Avro, type=" + entry.getType(), e);
         }
     }
-    
+
     private void handleTransportFailure(OutboxEntity entry, Exception e) {
         entry.incrementRetryCount();
         jpaOutboxRepository.save(entry);
