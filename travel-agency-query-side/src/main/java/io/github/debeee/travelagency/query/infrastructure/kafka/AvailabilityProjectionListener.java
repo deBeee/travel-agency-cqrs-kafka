@@ -18,7 +18,8 @@ public class AvailabilityProjectionListener {
 
     @KafkaListener(
             topics = "${app.topics.availability}",
-            groupId = "${spring.kafka.consumer.group-id}"
+            groupId = "${spring.kafka.consumer.group-id}",
+            containerFactory = "kafkaListenerContainerFactory"
     )
     public void onAvailabilityUpdated(AvailabilityUpdatedAvro event) {
         UpdateAvailabilityCommand command = new UpdateAvailabilityCommand(

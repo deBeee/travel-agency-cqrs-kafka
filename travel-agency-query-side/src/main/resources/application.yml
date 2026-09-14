@@ -45,6 +45,7 @@ spring:
 app:
   topics:
     availability: ${TOPIC_AVAILABILITY}
+    availability-dlt: ${TOPIC_AVAILABILITY_DLT}
   hotels:
     default-capacity: ${DEFAULT_HOTEL_CAPACITY:100}
   last-rooms-threshold: ${LAST_ROOMS_THRESHOLD:0.9}

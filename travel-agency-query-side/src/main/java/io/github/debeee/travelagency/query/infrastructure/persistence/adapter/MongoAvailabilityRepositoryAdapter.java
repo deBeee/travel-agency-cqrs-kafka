@@ -35,7 +35,7 @@ public class MongoAvailabilityRepositoryAdapter implements AvailabilityReadRepos
                 .map(mapper::toDomain)
                 .toList();
     }
-
+    
     @Override
     public void upsert(Availability availability) {
         String id = AvailabilityDocument.buildId(availability.getHotelId(), availability.getDate());

@@ -20,4 +20,13 @@ public class KafkaTopicsConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic dailyAvailabilityDltTopic() {
+        return TopicBuilder
+                .name(topics.availabilityDlt())
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
 }
