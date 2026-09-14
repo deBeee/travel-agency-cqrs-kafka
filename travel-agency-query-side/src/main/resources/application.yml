@@ -29,3 +29,22 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     properties:
       schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL}
+    consumer:
+      group-id: ${KAFKA_PROJECTION_GROUP_ID}
+      auto-offset-reset: earliest
+      properties:
+        key.deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+        value.deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: io.confluent.kafka.serializers.KafkaAvroDeserializer
+        specific.avro.reader: true
+        schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL}
+    listener:
+      ack-mode: record
+
+app:
+  topics:
+    availability: ${TOPIC_AVAILABILITY}
+  hotels:
+    default-capacity: ${DEFAULT_HOTEL_CAPACITY:100}
+  last-rooms-threshold: ${LAST_ROOMS_THRESHOLD:0.9}

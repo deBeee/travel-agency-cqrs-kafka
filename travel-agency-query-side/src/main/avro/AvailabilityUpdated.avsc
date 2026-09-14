@@ -1,0 +1,10 @@
+{
+  "type": "record",
+  "name": "AvailabilityUpdatedAvro",
+  "namespace": "io.github.debeee.travelagency.avro",
+  "fields": [
+    {"name": "hotelId",  "type": "long"},
+    {"name": "date",     "type": "string"},
+    {"name": "occupied", "type": "long"}
+  ]
+}

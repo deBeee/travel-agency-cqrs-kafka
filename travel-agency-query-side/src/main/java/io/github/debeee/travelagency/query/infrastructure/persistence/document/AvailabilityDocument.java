@@ -19,7 +19,6 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AvailabilityDocument {
-
     @Id
     private String id;
 
@@ -29,4 +28,8 @@ public class AvailabilityDocument {
     private long capacity;
     private AvailabilityStatus status;
     private Instant updatedAt;
+
+    public static String buildId(long hotelId, LocalDate date) {
+        return "hotel_" + hotelId + "_" + date.toString();
+    }
 }
