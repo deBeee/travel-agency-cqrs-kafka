@@ -59,6 +59,9 @@ app:
     bookings: ${TOPIC_BOOKINGS}
     availability: ${TOPIC_AVAILABILITY}
     availability-dlt: ${TOPIC_AVAILABILITY_DLT}
+    hotels: ${TOPIC_HOTELS}
+    hotels-dlt: ${TOPIC_HOTELS_DLT}
   hotels:
     default-capacity: ${DEFAULT_HOTEL_CAPACITY:100}
+    consumer-group: ${HOTELS_CONSUMER_GROUP}
   last-rooms-threshold: ${LAST_ROOMS_THRESHOLD:0.9}

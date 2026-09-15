@@ -57,4 +57,8 @@ public class Availability {
     public AvailabilityStatus getStatus() {
         return status;
     }
+    
+    public Availability withCapacityAndStatus(long capacity, AvailabilityStatus status) {
+        return new Availability(hotelId, date, occupied, capacity, status);
+    }
 }

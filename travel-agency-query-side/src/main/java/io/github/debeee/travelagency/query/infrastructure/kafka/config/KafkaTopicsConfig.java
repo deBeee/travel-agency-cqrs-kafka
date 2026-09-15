@@ -29,4 +29,13 @@ public class KafkaTopicsConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic hotelsDltTopic() {
+        return TopicBuilder
+                .name(topics.hotelsDlt())
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
 }

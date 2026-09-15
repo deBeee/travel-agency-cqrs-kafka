@@ -1,4 +1,4 @@
-package io.github.debeee.travelagency.query.infrastructure.kafka;
+package io.github.debeee.travelagency.query.infrastructure.kafka.listener;
 
 import io.github.debeee.travelagency.avro.AvailabilityUpdatedAvro;
 import io.github.debeee.travelagency.query.application.command.UpdateAvailabilityCommand;

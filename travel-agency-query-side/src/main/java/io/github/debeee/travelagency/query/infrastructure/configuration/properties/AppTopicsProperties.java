@@ -6,6 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record AppTopicsProperties(
         String bookings,
         String availability,
-        String availabilityDlt
+        String availabilityDlt,
+        String hotels,
+        String hotelsDlt
 ) {
 }

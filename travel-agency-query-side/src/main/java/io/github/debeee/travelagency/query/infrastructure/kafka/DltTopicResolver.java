@@ -13,7 +13,8 @@ public class DltTopicResolver {
 
     public DltTopicResolver(AppTopicsProperties topicsProperties) {
         this.sourceToDlt = Map.of(
-                topicsProperties.availability(), topicsProperties.availabilityDlt()
+                topicsProperties.availability(), topicsProperties.availabilityDlt(),
+                topicsProperties.hotels(), topicsProperties.hotelsDlt()
         );
     }
 
