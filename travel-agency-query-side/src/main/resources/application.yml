@@ -27,8 +27,19 @@ spring:
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    
     properties:
       schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL}
+      
+    streams:
+      application-id: ${KAFKA_STREAMS_APPLICATION_ID}
+      properties:
+        processing.guarantee: exactly_once_v2
+        schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL}
+        num.stream.threads: ${KAFKA_STREAMS_THREADS}
+        state.dir: ${KAFKA_STREAMS_STATE_DIR}
+        default.deserialization.exception.handler: org.apache.kafka.streams.errors.LogAndContinueExceptionHandler
+
     consumer:
       group-id: ${KAFKA_PROJECTION_GROUP_ID}
       auto-offset-reset: earliest
@@ -39,11 +50,13 @@ spring:
         spring.deserializer.value.delegate.class: io.confluent.kafka.serializers.KafkaAvroDeserializer
         specific.avro.reader: true
         schema.registry.url: ${KAFKA_SCHEMA_REGISTRY_URL}
+        
     listener:
       ack-mode: record
 
 app:
   topics:
+    bookings: ${TOPIC_BOOKINGS}
     availability: ${TOPIC_AVAILABILITY}
     availability-dlt: ${TOPIC_AVAILABILITY_DLT}
   hotels:

@@ -20,13 +20,14 @@ RUN java -Djarmode=tools -jar target/*.jar extract --destination target/extracte
 # -----------------------------------------------------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN addgroup -g 10001 -S appgroup && adduser -u 10001 -S appuser -G appgroup && apk add --no-cache libstdc++ su-exec wget
+
 WORKDIR /app
 
 COPY --from=build --chown=appuser:appgroup /build/target/extracted/lib/   ./lib/
 COPY --from=build --chown=appuser:appgroup /build/target/extracted/*.jar  ./
 
-USER appuser
+RUN mkdir -p /var/lib/travel-agency-query-side/kafka-streams
 
 EXPOSE 8081
 
@@ -40,4 +41,8 @@ ENV JAVA_OPTS="\
   -XX:+ExitOnOutOfMemoryError \
   -Djava.security.egd=file:/dev/./urandom"
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar *.jar"]
+ENTRYPOINT ["sh", "-c", "\
+  STATE_DIR=\"${KAFKA_STREAMS_STATE_DIR:-/var/lib/travel-agency-query-side/kafka-streams}\"; \
+  mkdir -p \"$STATE_DIR\" && chown -R appuser:appgroup \"$STATE_DIR\"; \
+  exec su-exec appuser:appgroup java $JAVA_OPTS -jar *.jar \
+"]
