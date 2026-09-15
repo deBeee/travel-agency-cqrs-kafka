@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ConfigHotelCapacityProvider implements HotelCapacityProvider {
+    
     private final HotelCapacityProperties properties;
 
     @Override
