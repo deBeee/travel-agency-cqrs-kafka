@@ -19,7 +19,7 @@ spring:
       enabled: true
 
   mongodb:
-    uri: ${SPRING_MONGODB_URI:mongodb://user:user1234@localhost:27018/travels_read_db?authSource=admin}
+    uri: ${SPRING_MONGODB_URI}
 
   data:
     mongodb:

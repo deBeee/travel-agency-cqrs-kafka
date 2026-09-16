@@ -1,0 +1,11 @@
+spring:
+  kafka:
+    properties:
+      schema.registry.url: mock://travel-agency
+
+kafka:
+  topics:
+    bookings:
+      name: travel.bookings
+    hotels:
+      name: travel.hotels

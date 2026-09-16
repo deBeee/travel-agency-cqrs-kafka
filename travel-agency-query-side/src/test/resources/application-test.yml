@@ -1,0 +1,24 @@
+spring:
+  kafka:
+    properties:
+      schema.registry.url: mock://travel-agency
+    streams:
+      application-id: travel-agency-query-side-streams-test
+      properties:
+        schema.registry.url: mock://travel-agency
+        num.stream.threads: 1
+        state.dir: target/kafka-streams-test-state
+    consumer:
+      group-id: travel-agency-query-side-projection-test
+      properties:
+        schema.registry.url: mock://travel-agency
+
+app:
+  topics:
+    bookings: travel.bookings
+    availability: travel.availability
+    availability-dlt: travel.availability.DLT
+    hotels: travel.hotels
+    hotels-dlt: travel.hotels.DLT
+  hotels:
+    consumer-group: travel-agency-query-side-hotels-test

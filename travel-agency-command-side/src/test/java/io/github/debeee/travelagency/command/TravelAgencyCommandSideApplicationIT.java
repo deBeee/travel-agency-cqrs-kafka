@@ -1,15 +1,16 @@
-package io.github.debeee.travelagency.query;
+package io.github.debeee.travelagency.command;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest
-class TravelAgencyQuerySideApplicationTests {
+@ActiveProfiles("test")
+class TravelAgencyCommandSideApplicationIT {
 
     @Test
     void contextLoads() {
     }
-
 }
