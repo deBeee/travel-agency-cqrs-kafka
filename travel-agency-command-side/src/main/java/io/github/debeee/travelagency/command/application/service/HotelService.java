@@ -21,7 +21,7 @@ public class HotelService implements CreateHotelUseCase, UpdateHotelCapacityUseC
     public Long createHotel(long capacity) {
         Hotel saved = hotelRepository.saveHotel(new Hotel(null, capacity));
         hotelOutboxRepository.saveOutbox(saved);
-        return saved.getId();
+        return saved.id();
     }
 
     @Override
@@ -29,7 +29,7 @@ public class HotelService implements CreateHotelUseCase, UpdateHotelCapacityUseC
         Hotel existing = hotelRepository.findHotel(hotelId)
                 .orElseThrow(() -> new HotelNotFoundException(hotelId));
 
-        Hotel updated = hotelRepository.saveHotel(new Hotel(existing.getId(), capacity));
+        Hotel updated = hotelRepository.saveHotel(new Hotel(existing.id(), capacity));
         hotelOutboxRepository.saveOutbox(updated);
     }
 }

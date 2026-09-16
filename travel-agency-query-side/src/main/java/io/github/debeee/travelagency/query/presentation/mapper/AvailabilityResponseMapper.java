@@ -14,12 +14,12 @@ public class AvailabilityResponseMapper {
     public List<AvailabilityResponseDto> toAvailabilityResponseDtos(List<Availability> availabilities) {
         return availabilities.stream()
                 .map(a -> new AvailabilityResponseDto(
-                        a.getHotelId(),
-                        a.getDate(),
-                        a.getOccupied(),
-                        a.getCapacity(),
+                        a.hotelId(),
+                        a.date(),
+                        a.occupied(),
+                        a.capacity(),
                         a.freeRooms(),
-                        toAvailabilityStatusDto(a.getStatus())
+                        toAvailabilityStatusDto(a.status())
                 ))
                 .toList();
     }

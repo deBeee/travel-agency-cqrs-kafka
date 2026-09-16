@@ -16,8 +16,8 @@ public class HotelMapper {
 
     public HotelEntity toHotelEntity(Hotel hotel) {
         return HotelEntity.builder()
-                .id(hotel.getId())
-                .capacity(hotel.getCapacity())
+                .id(hotel.id())
+                .capacity(hotel.capacity())
                 .build();
     }
 }

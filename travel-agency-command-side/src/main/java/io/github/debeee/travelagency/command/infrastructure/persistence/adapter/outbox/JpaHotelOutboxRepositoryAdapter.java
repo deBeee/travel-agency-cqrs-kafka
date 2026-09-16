@@ -22,12 +22,12 @@ public class JpaHotelOutboxRepositoryAdapter implements OutboxRepository<Hotel> 
 
     @Override
     public void saveOutbox(Hotel hotel) {
-        var payload = new HotelUpsertedPayload(hotel.getId(), hotel.getCapacity());
+        var payload = new HotelUpsertedPayload(hotel.id(), hotel.capacity());
 
         OutboxEntity outbox = outboxMapper.toOutboxEntity(
                 payload,
                 hotelsTopicProperties.name(),
-                hotel.getId().toString(),
+                hotel.id().toString(),
                 HOTEL_UPSERTED_EVENT_TYPE
         );
 

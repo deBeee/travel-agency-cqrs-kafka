@@ -38,15 +38,15 @@ public class MongoAvailabilityRepositoryAdapter implements AvailabilityReadRepos
     
     @Override
     public void upsert(Availability availability) {
-        String id = AvailabilityDocument.buildId(availability.getHotelId(), availability.getDate());
+        String id = AvailabilityDocument.buildId(availability.hotelId(), availability.date());
         Query query = new Query(Criteria.where("_id").is(id));
 
         Update update = new Update()
-                .set("hotelId", availability.getHotelId())
-                .set("date", availability.getDate())
-                .set("occupied", availability.getOccupied())
-                .set("capacity", availability.getCapacity())
-                .set("status", availability.getStatus())
+                .set("hotelId", availability.hotelId())
+                .set("date", availability.date())
+                .set("occupied", availability.occupied())
+                .set("capacity", availability.capacity())
+                .set("status", availability.status())
                 .set("updatedAt", Instant.now());
 
         mongoTemplate.upsert(query, update, AvailabilityDocument.class);

@@ -38,7 +38,7 @@ public class HotelCapacityService implements UpsertHotelCapacityUseCase {
         List<Availability> availabilities = availabilityReadRepository.findByHotel(hotelId, null, null);
 
         for (Availability av : availabilities) {
-            AvailabilityStatus newStatus = availabilityStatusPolicy.evaluate(av.getOccupied(), capacity);
+            AvailabilityStatus newStatus = availabilityStatusPolicy.evaluate(av.occupied(), capacity);
             Availability corrected = av.withCapacityAndStatus(capacity, newStatus);
             availabilityWriteRepository.upsert(corrected);
         }

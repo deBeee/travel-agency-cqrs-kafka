@@ -37,8 +37,8 @@ public class BookingService implements CreateBookingUseCase {
                 .orElseThrow(() -> new HotelNotFoundException(hotelId));
 
         availabilityRepository.reserveAvailability(
-                hotel.getId(),
-                hotel.getCapacity(),
+                hotel.id(),
+                hotel.capacity(),
                 command.start(),
                 command.end()
         );
