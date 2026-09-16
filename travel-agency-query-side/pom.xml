@@ -31,6 +31,7 @@
         <avro.version>1.11.3</avro.version>
         <confluent.version>7.6.0</confluent.version>
         <commons-compress.version>1.28.0</commons-compress.version>
+        <instancio.version>6.0.0</instancio.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -148,6 +149,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.instancio</groupId>
+            <artifactId>instancio-junit</artifactId>
+            <version>${instancio.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

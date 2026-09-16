@@ -32,6 +32,7 @@
         <shedlock.version>6.0.2</shedlock.version>
         <confluent.version>7.6.0</confluent.version>
         <commons-compress.version>1.28.0</commons-compress.version>
+        <instancio.version>6.0.0</instancio.version>
         <spring.retry.version>2.0.12</spring.retry.version>
     </properties>
     <dependencyManagement>
@@ -162,6 +163,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.instancio</groupId>
+            <artifactId>instancio-junit</artifactId>
+            <version>${instancio.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

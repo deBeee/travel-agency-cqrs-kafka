@@ -29,6 +29,7 @@ public class OutboxEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @Column(nullable = false)
