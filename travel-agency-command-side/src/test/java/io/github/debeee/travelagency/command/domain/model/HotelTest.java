@@ -6,6 +6,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class HotelTest {
 
@@ -19,8 +20,10 @@ class HotelTest {
         Hotel hotel = new Hotel(id, capacity);
 
         // then
-        assertThat(hotel.getId()).isEqualTo(id);
-        assertThat(hotel.getCapacity()).isEqualTo(capacity);
+        assertAll(
+                () -> assertThat(hotel.id()).isEqualTo(id),
+                () -> assertThat(hotel.capacity()).isEqualTo(capacity)
+        );
     }
 
     @Test
@@ -32,8 +35,10 @@ class HotelTest {
         Hotel hotel = new Hotel(null, capacity);
 
         // then
-        assertThat(hotel.getId()).isNull();
-        assertThat(hotel.getCapacity()).isEqualTo(capacity);
+        assertAll(
+                () -> assertThat(hotel.id()).isNull(),
+                () -> assertThat(hotel.capacity()).isEqualTo(capacity)
+        );
     }
 
     @ParameterizedTest

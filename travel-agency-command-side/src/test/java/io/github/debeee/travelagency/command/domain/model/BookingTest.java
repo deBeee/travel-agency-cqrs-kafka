@@ -6,6 +6,7 @@ import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class BookingTest {
 
@@ -22,11 +23,13 @@ class BookingTest {
         Booking booking = new Booking(null, HOTEL_ID, USER_ID, start, end);
 
         // then
-        assertThat(booking.id()).isNull();
-        assertThat(booking.hotelId()).isEqualTo(HOTEL_ID);
-        assertThat(booking.userId()).isEqualTo(USER_ID);
-        assertThat(booking.start()).isEqualTo(start);
-        assertThat(booking.end()).isEqualTo(end);
+        assertAll(
+                () -> assertThat(booking.id()).isNull(),
+                () -> assertThat(booking.hotelId()).isEqualTo(HOTEL_ID),
+                () -> assertThat(booking.userId()).isEqualTo(USER_ID),
+                () -> assertThat(booking.start()).isEqualTo(start),
+                () -> assertThat(booking.end()).isEqualTo(end)
+        );
     }
 
     @Test
@@ -38,8 +41,10 @@ class BookingTest {
         Booking booking = new Booking(1L, HOTEL_ID, USER_ID, singleNight, singleNight);
 
         // then
-        assertThat(booking.start()).isEqualTo(singleNight);
-        assertThat(booking.end()).isEqualTo(singleNight);
+        assertAll(
+                () -> assertThat(booking.start()).isEqualTo(singleNight),
+                () -> assertThat(booking.end()).isEqualTo(singleNight)
+        );
     }
 
     @Test

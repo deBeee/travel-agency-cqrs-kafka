@@ -7,6 +7,7 @@ import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class DailyAvailabilityTest {
 
@@ -22,9 +23,11 @@ class DailyAvailabilityTest {
         DailyAvailability availability = new DailyAvailability(HOTEL_ID, DATE, occupiedRooms);
 
         // then
-        assertThat(availability.getHotelId()).isEqualTo(HOTEL_ID);
-        assertThat(availability.getDate()).isEqualTo(DATE);
-        assertThat(availability.getOccupiedRooms()).isEqualTo(occupiedRooms);
+        assertAll(
+                () -> assertThat(availability.getHotelId()).isEqualTo(HOTEL_ID),
+                () -> assertThat(availability.getDate()).isEqualTo(DATE),
+                () -> assertThat(availability.getOccupiedRooms()).isEqualTo(occupiedRooms)
+        );
     }
 
     @Test
