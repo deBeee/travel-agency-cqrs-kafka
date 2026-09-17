@@ -1,0 +1,19 @@
+package io.github.debeee.travelagency.command;
+
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.testcontainers.mysql.MySQLContainer;
+import org.testcontainers.utility.DockerImageName;
+
+@TestConfiguration(proxyBeanMethods = false)
+public class MySqlContainerConfiguration {
+
+    private static final DockerImageName MYSQL_IMAGE = DockerImageName.parse("mysql:9.7.0");
+
+    @Bean
+    @ServiceConnection
+    MySQLContainer mysqlContainer() {
+        return new MySQLContainer(MYSQL_IMAGE);
+    }
+}

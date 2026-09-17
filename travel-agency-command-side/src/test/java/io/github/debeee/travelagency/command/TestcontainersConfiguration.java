@@ -1,32 +1,9 @@
 package io.github.debeee.travelagency.command;
 
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.context.annotation.Bean;
-import org.springframework.test.context.DynamicPropertyRegistrar;
-import org.testcontainers.kafka.KafkaContainer;
-import org.testcontainers.mysql.MySQLContainer;
-import org.testcontainers.utility.DockerImageName;
+import org.springframework.context.annotation.Import;
 
 @TestConfiguration(proxyBeanMethods = false)
+@Import({MySqlContainerConfiguration.class, KafkaContainerConfiguration.class})
 class TestcontainersConfiguration {
-
-    private static final DockerImageName MYSQL_IMAGE = DockerImageName.parse("mysql:9.7.0");
-    private static final DockerImageName KAFKA_IMAGE = DockerImageName.parse("apache/kafka-native:3.8.1");
-
-    @Bean
-    KafkaContainer kafkaContainer() {
-        return new KafkaContainer(KAFKA_IMAGE);
-    }
-    
-    @Bean
-    DynamicPropertyRegistrar kafkaPropertiesRegistrar(KafkaContainer kafkaContainer) {
-        return registry -> registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers);
-    }
-
-    @Bean
-    @ServiceConnection
-    MySQLContainer mysqlContainer() {
-        return new MySQLContainer(MYSQL_IMAGE);
-    }
 }
