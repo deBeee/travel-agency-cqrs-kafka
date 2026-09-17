@@ -23,18 +23,22 @@ class OutboxMapperTest {
         // given
         BookingCreatedPayload payload = new BookingCreatedPayload(
                 42L, 7L, 100L, LocalDate.of(2027, 6, 1), LocalDate.of(2027, 6, 3));
+        String topic = "travel.bookings";
+        String aggregateId = "7";
+        String eventType = "BookingCreated";
+        String expectedPayloadJson =
+                "{\"id\":42,\"hotelId\":7,\"userId\":100,\"start\":\"2027-06-01\",\"end\":\"2027-06-03\"}";
 
         // when
-        OutboxEntity entity = outboxMapper.toOutboxEntity(payload, "travel.bookings", "7", "BookingCreated");
+        OutboxEntity entity = outboxMapper.toOutboxEntity(payload, topic, aggregateId, eventType);
 
         // then
         assertAll(
                 () -> assertThat(entity.getId()).isNull(),
-                () -> assertThat(entity.getAggregateId()).isEqualTo("7"),
-                () -> assertThat(entity.getType()).isEqualTo("BookingCreated"),
-                () -> assertThat(entity.getTopic()).isEqualTo("travel.bookings"),
-                () -> assertThat(entity.getPayload())
-                        .isEqualTo("{\"id\":42,\"hotelId\":7,\"userId\":100,\"start\":\"2027-06-01\",\"end\":\"2027-06-03\"}"),
+                () -> assertThat(entity.getAggregateId()).isEqualTo(aggregateId),
+                () -> assertThat(entity.getType()).isEqualTo(eventType),
+                () -> assertThat(entity.getTopic()).isEqualTo(topic),
+                () -> assertThat(entity.getPayload()).isEqualTo(expectedPayloadJson),
                 () -> assertThat(entity.getRetryCount()).isZero(),
                 () -> assertThat(entity.getCreatedAt()).isCloseTo(LocalDateTime.now(), within(5, ChronoUnit.SECONDS))
         );
@@ -44,17 +48,21 @@ class OutboxMapperTest {
     void shouldSerializeHotelUpsertedPayloadToJsonWhenMappingToOutboxEntity() {
         // given
         HotelUpsertedPayload payload = new HotelUpsertedPayload(7L, 10L);
+        String topic = "travel.hotels";
+        String aggregateId = "7";
+        String eventType = "HotelUpserted";
+        String expectedPayloadJson = "{\"hotelId\":7,\"capacity\":10}";
 
         // when
-        OutboxEntity entity = outboxMapper.toOutboxEntity(payload, "travel.hotels", "7", "HotelUpserted");
+        OutboxEntity entity = outboxMapper.toOutboxEntity(payload, topic, aggregateId, eventType);
 
         // then
         assertAll(
                 () -> assertThat(entity.getId()).isNull(),
-                () -> assertThat(entity.getAggregateId()).isEqualTo("7"),
-                () -> assertThat(entity.getType()).isEqualTo("HotelUpserted"),
-                () -> assertThat(entity.getTopic()).isEqualTo("travel.hotels"),
-                () -> assertThat(entity.getPayload()).isEqualTo("{\"hotelId\":7,\"capacity\":10}"),
+                () -> assertThat(entity.getAggregateId()).isEqualTo(aggregateId),
+                () -> assertThat(entity.getType()).isEqualTo(eventType),
+                () -> assertThat(entity.getTopic()).isEqualTo(topic),
+                () -> assertThat(entity.getPayload()).isEqualTo(expectedPayloadJson),
                 () -> assertThat(entity.getRetryCount()).isZero(),
                 () -> assertThat(entity.getCreatedAt()).isCloseTo(LocalDateTime.now(), within(5, ChronoUnit.SECONDS))
         );

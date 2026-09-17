@@ -34,30 +34,33 @@ class DailyAvailabilityTest {
     void shouldIncrementOccupiedRoomsWhenCapacityIsNotReached() {
         // given
         DailyAvailability availability = new DailyAvailability(HOTEL_ID, DATE, 0);
+        long expectedOccupiedRooms = 1;
 
         // when
         availability.reserveOne(2);
 
         // then
-        assertThat(availability.getOccupiedRooms()).isEqualTo(1);
+        assertThat(availability.getOccupiedRooms()).isEqualTo(expectedOccupiedRooms);
     }
 
     @Test
     void shouldReserveLastRoomWhenOneRoomIsLeft() {
         // given
         DailyAvailability availability = new DailyAvailability(HOTEL_ID, DATE, 1);
+        long expectedOccupiedRooms = 2;
 
         // when
         availability.reserveOne(2);
 
         // then
-        assertThat(availability.getOccupiedRooms()).isEqualTo(2);
+        assertThat(availability.getOccupiedRooms()).isEqualTo(expectedOccupiedRooms);
     }
 
     @Test
     void shouldAccumulateOccupiedRoomsWhenReserveOneIsCalledRepeatedly() {
         // given
         DailyAvailability availability = new DailyAvailability(HOTEL_ID, DATE, 0);
+        long expectedOccupiedRooms = 3;
 
         // when
         availability.reserveOne(3);
@@ -65,18 +68,19 @@ class DailyAvailabilityTest {
         availability.reserveOne(3);
 
         // then
-        assertThat(availability.getOccupiedRooms()).isEqualTo(3);
+        assertThat(availability.getOccupiedRooms()).isEqualTo(expectedOccupiedRooms);
     }
 
     @Test
     void shouldThrowOverbookingExceptionWhenOccupiedRoomsEqualCapacity() {
         // given
         DailyAvailability availability = new DailyAvailability(HOTEL_ID, DATE, 2);
+        String expectedMessage = "Hotel 7 overbooked on 2027-06-01. Capacity: 2, occupied: 2";
 
         // when & then
         assertThatThrownBy(() -> availability.reserveOne(2))
                 .isInstanceOf(OverbookingException.class)
-                .hasMessage("Hotel 7 overbooked on 2027-06-01. Capacity: 2, occupied: 2");
+                .hasMessage(expectedMessage);
     }
 
     @Test
@@ -92,11 +96,12 @@ class DailyAvailabilityTest {
     @Test
     void shouldKeepOccupiedRoomsUnchangedWhenReservationIsRejected() {
         // given
-        DailyAvailability availability = new DailyAvailability(HOTEL_ID, DATE, 2);
+        long occupiedRooms = 2;
+        DailyAvailability availability = new DailyAvailability(HOTEL_ID, DATE, occupiedRooms);
 
         // when & then
         assertThatThrownBy(() -> availability.reserveOne(2))
                 .isInstanceOf(OverbookingException.class);
-        assertThat(availability.getOccupiedRooms()).isEqualTo(2);
+        assertThat(availability.getOccupiedRooms()).isEqualTo(occupiedRooms);
     }
 }

@@ -40,8 +40,9 @@ class BookingControllerTest {
     void shouldReturnCreatedWithBookingIdWhenRequestIsValid() throws Exception {
         // given
         String requestBody = bookingJson(HOTEL_ID, USER_ID, START, END);
+        Long expectedBookingId = 42L;
         given(createBookingUseCase.createBooking(new CreateBookingCommand(HOTEL_ID, USER_ID, START, END)))
-                .willReturn(42L);
+                .willReturn(expectedBookingId);
 
         // when
         ResultActions result = mockMvc.perform(post("/api/bookings")
@@ -50,13 +51,18 @@ class BookingControllerTest {
 
         // then
         result.andExpect(status().isCreated())
-                .andExpect(jsonPath("$.bookingId").value(42));
+                .andExpect(jsonPath("$.bookingId").value(expectedBookingId));
     }
 
     @Test
     void shouldReturnBadRequestWithFieldErrorsWhenRequiredFieldsAreMissing() throws Exception {
         // given
         String requestBody = "{}";
+        String expectedMessage = "Validation error";
+        String expectedHotelIdError = "Hotel id is required";
+        String expectedUserIdError = "User id is required";
+        String expectedStartError = "Start date is required";
+        String expectedEndError = "End date is required";
 
         // when
         ResultActions result = mockMvc.perform(post("/api/bookings")
@@ -65,11 +71,11 @@ class BookingControllerTest {
 
         // then
         result.andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Validation error"))
-                .andExpect(jsonPath("$.validationErrors.hotelId").value("Hotel id is required"))
-                .andExpect(jsonPath("$.validationErrors.userId").value("User id is required"))
-                .andExpect(jsonPath("$.validationErrors.start").value("Start date is required"))
-                .andExpect(jsonPath("$.validationErrors.end").value("End date is required"));
+                .andExpect(jsonPath("$.message").value(expectedMessage))
+                .andExpect(jsonPath("$.validationErrors.hotelId").value(expectedHotelIdError))
+                .andExpect(jsonPath("$.validationErrors.userId").value(expectedUserIdError))
+                .andExpect(jsonPath("$.validationErrors.start").value(expectedStartError))
+                .andExpect(jsonPath("$.validationErrors.end").value(expectedEndError));
         then(createBookingUseCase).shouldHaveNoInteractions();
     }
 
@@ -78,6 +84,7 @@ class BookingControllerTest {
         // given
         LocalDate yesterday = LocalDate.now().minusDays(1);
         String requestBody = bookingJson(HOTEL_ID, USER_ID, yesterday, END);
+        String expectedStartError = "Start date must not be in the past";
 
         // when
         ResultActions result = mockMvc.perform(post("/api/bookings")
@@ -86,7 +93,7 @@ class BookingControllerTest {
 
         // then
         result.andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.validationErrors.start").value("Start date must not be in the past"));
+                .andExpect(jsonPath("$.validationErrors.start").value(expectedStartError));
         then(createBookingUseCase).shouldHaveNoInteractions();
     }
 
@@ -94,6 +101,7 @@ class BookingControllerTest {
     void shouldReturnBadRequestWhenBodyIsNotValidJson() throws Exception {
         // given
         String requestBody = "this is not json";
+        String expectedMessage = "Malformed request body";
 
         // when
         ResultActions result = mockMvc.perform(post("/api/bookings")
@@ -102,7 +110,7 @@ class BookingControllerTest {
 
         // then
         result.andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Malformed request body"));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
         then(createBookingUseCase).shouldHaveNoInteractions();
     }
 
@@ -110,8 +118,9 @@ class BookingControllerTest {
     void shouldReturnBadRequestWhenStartIsAfterEnd() throws Exception {
         // given
         String requestBody = bookingJson(HOTEL_ID, USER_ID, END, START);
+        String expectedMessage = "Start date cannot be after end date";
         given(createBookingUseCase.createBooking(new CreateBookingCommand(HOTEL_ID, USER_ID, END, START)))
-                .willThrow(new IllegalArgumentException("Start date cannot be after end date"));
+                .willThrow(new IllegalArgumentException(expectedMessage));
 
         // when
         ResultActions result = mockMvc.perform(post("/api/bookings")
@@ -120,13 +129,14 @@ class BookingControllerTest {
 
         // then
         result.andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Start date cannot be after end date"));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
     }
 
     @Test
     void shouldReturnNotFoundWhenHotelDoesNotExist() throws Exception {
         // given
         String requestBody = bookingJson(HOTEL_ID, USER_ID, START, END);
+        String expectedMessage = "Hotel 7 not found";
         given(createBookingUseCase.createBooking(new CreateBookingCommand(HOTEL_ID, USER_ID, START, END)))
                 .willThrow(new HotelNotFoundException(HOTEL_ID));
 
@@ -137,16 +147,16 @@ class BookingControllerTest {
 
         // then
         result.andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Hotel 7 not found"));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
     }
 
     @Test
     void shouldReturnConflictWhenHotelIsOverbooked() throws Exception {
         // given
         String requestBody = bookingJson(HOTEL_ID, USER_ID, START, END);
-        String overbookingMessage = "Hotel 7 overbooked on " + START + ". Capacity: 2, occupied: 2";
+        String expectedMessage = "Hotel 7 overbooked on " + START + ". Capacity: 2, occupied: 2";
         given(createBookingUseCase.createBooking(new CreateBookingCommand(HOTEL_ID, USER_ID, START, END)))
-                .willThrow(new OverbookingException(overbookingMessage));
+                .willThrow(new OverbookingException(expectedMessage));
 
         // when
         ResultActions result = mockMvc.perform(post("/api/bookings")
@@ -155,13 +165,14 @@ class BookingControllerTest {
 
         // then
         result.andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value(overbookingMessage));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
     }
 
     @Test
     void shouldReturnConflictWhenConcurrentBookingIsDetected() throws Exception {
         // given
         String requestBody = bookingJson(HOTEL_ID, USER_ID, START, END);
+        String expectedMessage = "Concurrent booking detected. Please retry.";
         given(createBookingUseCase.createBooking(new CreateBookingCommand(HOTEL_ID, USER_ID, START, END)))
                 .willThrow(new DataIntegrityViolationException("Duplicate entry for key 'daily_availabilities.PRIMARY'"));
 
@@ -172,13 +183,14 @@ class BookingControllerTest {
 
         // then
         result.andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Concurrent booking detected. Please retry."));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
     }
 
     @Test
     void shouldReturnInternalServerErrorWithGenericMessageWhenUnexpectedErrorOccurs() throws Exception {
         // given
         String requestBody = bookingJson(HOTEL_ID, USER_ID, START, END);
+        String expectedMessage = "Unexpected error occurred";
         given(createBookingUseCase.createBooking(new CreateBookingCommand(HOTEL_ID, USER_ID, START, END)))
                 .willThrow(new IllegalStateException("Connection pool exhausted"));
 
@@ -189,13 +201,14 @@ class BookingControllerTest {
 
         // then
         result.andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.message").value("Unexpected error occurred"));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
     }
 
     @Test
     void shouldReturnUnsupportedMediaTypeWhenContentTypeIsNotJson() throws Exception {
         // given
         String requestBody = bookingJson(HOTEL_ID, USER_ID, START, END);
+        String expectedMessage = "Unsupported media type";
 
         // when
         ResultActions result = mockMvc.perform(post("/api/bookings")
@@ -204,28 +217,34 @@ class BookingControllerTest {
 
         // then
         result.andExpect(status().isUnsupportedMediaType())
-                .andExpect(jsonPath("$.message").value("Unsupported media type"));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
         then(createBookingUseCase).shouldHaveNoInteractions();
     }
 
     @Test
     void shouldReturnMethodNotAllowedWhenHttpMethodIsNotSupported() throws Exception {
+        // given
+        String expectedMessage = "Method 'GET' is not supported";
+
         // when
         ResultActions result = mockMvc.perform(get("/api/bookings"));
 
         // then
         result.andExpect(status().isMethodNotAllowed())
-                .andExpect(jsonPath("$.message").value("Method 'GET' is not supported"));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
     }
 
     @Test
     void shouldReturnNotFoundWhenResourceDoesNotExist() throws Exception {
+        // given
+        String expectedMessage = "Resource not found";
+
         // when
         ResultActions result = mockMvc.perform(get("/api/unknown"));
 
         // then
         result.andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Resource not found"));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
     }
 
     private static String bookingJson(Long hotelId, Long userId, LocalDate start, LocalDate end) {

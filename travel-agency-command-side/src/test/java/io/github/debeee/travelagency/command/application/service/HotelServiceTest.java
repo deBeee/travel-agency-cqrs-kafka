@@ -45,7 +45,7 @@ class HotelServiceTest {
         Long hotelId = hotelService.createHotel(capacity);
 
         // then
-        assertThat(hotelId).isEqualTo(HOTEL_ID);
+        assertThat(hotelId).isEqualTo(savedHotel.id());
     }
 
     @Test
@@ -69,11 +69,12 @@ class HotelServiceTest {
     void shouldThrowIllegalArgumentExceptionWhenCreatedHotelCapacityIsNotPositive() {
         // given
         long capacity = 0;
+        String expectedMessage = "Capacity must be positive";
 
         // when & then
         assertThatThrownBy(() -> hotelService.createHotel(capacity))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Capacity must be positive");
+                .hasMessage(expectedMessage);
         then(hotelRepository).shouldHaveNoInteractions();
         then(hotelOutboxRepository).shouldHaveNoInteractions();
     }
@@ -101,11 +102,12 @@ class HotelServiceTest {
         // given
         long newCapacity = 20;
         given(hotelRepository.findHotel(HOTEL_ID)).willReturn(Optional.empty());
+        String expectedMessage = "Hotel 5 not found";
 
         // when & then
         assertThatThrownBy(() -> hotelService.updateCapacity(HOTEL_ID, newCapacity))
                 .isInstanceOf(HotelNotFoundException.class)
-                .hasMessage("Hotel 5 not found");
+                .hasMessage(expectedMessage);
         then(hotelRepository).should().findHotel(HOTEL_ID);
         then(hotelRepository).shouldHaveNoMoreInteractions();
         then(hotelOutboxRepository).shouldHaveNoInteractions();
@@ -116,11 +118,12 @@ class HotelServiceTest {
         // given
         Hotel existingHotel = new Hotel(HOTEL_ID, 10);
         given(hotelRepository.findHotel(HOTEL_ID)).willReturn(Optional.of(existingHotel));
+        String expectedMessage = "Capacity must be positive";
 
         // when & then
         assertThatThrownBy(() -> hotelService.updateCapacity(HOTEL_ID, -1))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Capacity must be positive");
+                .hasMessage(expectedMessage);
         then(hotelRepository).should().findHotel(HOTEL_ID);
         then(hotelRepository).shouldHaveNoMoreInteractions();
         then(hotelOutboxRepository).shouldHaveNoInteractions();

@@ -52,32 +52,35 @@ class BookingTest {
         // given
         LocalDate start = LocalDate.of(2027, 6, 3);
         LocalDate end = LocalDate.of(2027, 6, 1);
+        String expectedMessage = "Start date cannot be after end date";
 
         // when & then
         assertThatThrownBy(() -> new Booking(null, HOTEL_ID, USER_ID, start, end))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Start date cannot be after end date");
+                .hasMessage(expectedMessage);
     }
 
     @Test
     void shouldThrowIllegalArgumentExceptionWhenStartIsNull() {
         // given
         LocalDate end = LocalDate.of(2027, 6, 1);
+        String expectedMessage = "Dates are required";
 
         // when & then
         assertThatThrownBy(() -> new Booking(null, HOTEL_ID, USER_ID, null, end))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Dates are required");
+                .hasMessage(expectedMessage);
     }
 
     @Test
     void shouldThrowIllegalArgumentExceptionWhenEndIsNull() {
         // given
         LocalDate start = LocalDate.of(2027, 6, 1);
+        String expectedMessage = "Dates are required";
 
         // when & then
         assertThatThrownBy(() -> new Booking(null, HOTEL_ID, USER_ID, start, null))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Dates are required");
+                .hasMessage(expectedMessage);
     }
 }

@@ -63,7 +63,7 @@ class BookingServiceTest {
         Long bookingId = bookingService.createBooking(command);
 
         // then
-        assertThat(bookingId).isEqualTo(42L);
+        assertThat(bookingId).isEqualTo(savedBooking.id());
     }
 
     @Test
@@ -89,11 +89,12 @@ class BookingServiceTest {
     void shouldThrowIllegalArgumentExceptionWhenStartIsAfterEnd() {
         // given
         CreateBookingCommand command = new CreateBookingCommand(HOTEL_ID, USER_ID, END, START);
+        String expectedMessage = "Start date cannot be after end date";
 
         // when & then
         assertThatThrownBy(() -> bookingService.createBooking(command))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Start date cannot be after end date");
+                .hasMessage(expectedMessage);
         then(hotelRepository).shouldHaveNoInteractions();
         then(availabilityRepository).shouldHaveNoInteractions();
         then(bookingRepository).shouldHaveNoInteractions();
@@ -105,11 +106,12 @@ class BookingServiceTest {
         // given
         CreateBookingCommand command = new CreateBookingCommand(HOTEL_ID, USER_ID, START, END);
         given(hotelRepository.findHotel(HOTEL_ID)).willReturn(Optional.empty());
+        String expectedMessage = "Hotel 7 not found";
 
         // when & then
         assertThatThrownBy(() -> bookingService.createBooking(command))
                 .isInstanceOf(HotelNotFoundException.class)
-                .hasMessage("Hotel 7 not found");
+                .hasMessage(expectedMessage);
         then(availabilityRepository).shouldHaveNoInteractions();
         then(bookingRepository).shouldHaveNoInteractions();
         then(bookingOutboxRepository).shouldHaveNoInteractions();

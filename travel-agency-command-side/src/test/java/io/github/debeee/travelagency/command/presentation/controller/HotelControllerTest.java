@@ -36,10 +36,9 @@ class HotelControllerTest {
     @Test
     void shouldReturnCreatedWithHotelIdWhenCapacityIsPositive() throws Exception {
         // given
-        String requestBody = """
-                {"capacity": 10}
-                """;
-        given(createHotelUseCase.createHotel(10)).willReturn(HOTEL_ID);
+        long capacity = 10;
+        String requestBody = capacityJson(capacity);
+        given(createHotelUseCase.createHotel(capacity)).willReturn(HOTEL_ID);
 
         // when
         ResultActions result = mockMvc.perform(post("/api/hotels")
@@ -48,15 +47,15 @@ class HotelControllerTest {
 
         // then
         result.andExpect(status().isCreated())
-                .andExpect(jsonPath("$.hotelId").value(5));
+                .andExpect(jsonPath("$.hotelId").value(HOTEL_ID));
     }
 
     @Test
     void shouldReturnBadRequestWithFieldErrorWhenCreatedCapacityIsNotPositive() throws Exception {
         // given
-        String requestBody = """
-                {"capacity": 0}
-                """;
+        String requestBody = capacityJson(0);
+        String expectedMessage = "Validation error";
+        String expectedCapacityError = "Capacity must be positive";
 
         // when
         ResultActions result = mockMvc.perform(post("/api/hotels")
@@ -65,17 +64,16 @@ class HotelControllerTest {
 
         // then
         result.andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Validation error"))
-                .andExpect(jsonPath("$.validationErrors.capacity").value("Capacity must be positive"));
+                .andExpect(jsonPath("$.message").value(expectedMessage))
+                .andExpect(jsonPath("$.validationErrors.capacity").value(expectedCapacityError));
         then(createHotelUseCase).shouldHaveNoInteractions();
     }
 
     @Test
     void shouldReturnOkWithNewCapacityWhenHotelExists() throws Exception {
         // given
-        String requestBody = """
-                {"capacity": 20}
-                """;
+        long newCapacity = 20;
+        String requestBody = capacityJson(newCapacity);
 
         // when
         ResultActions result = mockMvc.perform(put("/api/hotels/{hotelId}", HOTEL_ID)
@@ -84,18 +82,19 @@ class HotelControllerTest {
 
         // then
         result.andExpect(status().isOk())
-                .andExpect(jsonPath("$.hotelId").value(5))
-                .andExpect(jsonPath("$.capacity").value(20));
-        then(updateHotelCapacityUseCase).should().updateCapacity(HOTEL_ID, 20);
+                .andExpect(jsonPath("$.hotelId").value(HOTEL_ID))
+                .andExpect(jsonPath("$.capacity").value(newCapacity));
+        then(updateHotelCapacityUseCase).should().updateCapacity(HOTEL_ID, newCapacity);
     }
 
     @Test
     void shouldReturnNotFoundWhenUpdatedHotelDoesNotExist() throws Exception {
         // given
-        String requestBody = """
-                {"capacity": 20}
-                """;
-        willThrow(new HotelNotFoundException(HOTEL_ID)).given(updateHotelCapacityUseCase).updateCapacity(HOTEL_ID, 20);
+        long newCapacity = 20;
+        String requestBody = capacityJson(newCapacity);
+        String expectedMessage = "Hotel 5 not found";
+        willThrow(new HotelNotFoundException(HOTEL_ID))
+                .given(updateHotelCapacityUseCase).updateCapacity(HOTEL_ID, newCapacity);
 
         // when
         ResultActions result = mockMvc.perform(put("/api/hotels/{hotelId}", HOTEL_ID)
@@ -104,15 +103,14 @@ class HotelControllerTest {
 
         // then
         result.andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Hotel 5 not found"));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
     }
 
     @Test
     void shouldReturnBadRequestWithFieldErrorWhenUpdatedCapacityIsNotPositive() throws Exception {
         // given
-        String requestBody = """
-                {"capacity": -1}
-                """;
+        String requestBody = capacityJson(-1);
+        String expectedCapacityError = "Capacity must be positive";
 
         // when
         ResultActions result = mockMvc.perform(put("/api/hotels/{hotelId}", HOTEL_ID)
@@ -121,16 +119,15 @@ class HotelControllerTest {
 
         // then
         result.andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.validationErrors.capacity").value("Capacity must be positive"));
+                .andExpect(jsonPath("$.validationErrors.capacity").value(expectedCapacityError));
         then(updateHotelCapacityUseCase).shouldHaveNoInteractions();
     }
 
     @Test
     void shouldReturnBadRequestWhenHotelIdIsNotNumeric() throws Exception {
         // given
-        String requestBody = """
-                {"capacity": 20}
-                """;
+        String requestBody = capacityJson(20);
+        String expectedMessage = "Invalid value for parameter 'hotelId'";
 
         // when
         ResultActions result = mockMvc.perform(put("/api/hotels/{hotelId}", "abc")
@@ -139,7 +136,7 @@ class HotelControllerTest {
 
         // then
         result.andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Invalid value for parameter 'hotelId'"));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
         then(updateHotelCapacityUseCase).shouldHaveNoInteractions();
     }
 
@@ -147,6 +144,7 @@ class HotelControllerTest {
     void shouldReturnBadRequestWhenBodyIsNotValidJson() throws Exception {
         // given
         String requestBody = "{capacity:";
+        String expectedMessage = "Malformed request body";
 
         // when
         ResultActions result = mockMvc.perform(post("/api/hotels")
@@ -155,7 +153,13 @@ class HotelControllerTest {
 
         // then
         result.andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Malformed request body"));
+                .andExpect(jsonPath("$.message").value(expectedMessage));
         then(createHotelUseCase).shouldHaveNoInteractions();
+    }
+
+    private static String capacityJson(long capacity) {
+        return """
+                {"capacity": %d}
+                """.formatted(capacity);
     }
 }

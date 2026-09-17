@@ -184,6 +184,7 @@ class OutboxSchedulerTest {
                 .create();
         ArgumentCaptor<DeadLetterEntity> deadLetterCaptor = ArgumentCaptor.forClass(DeadLetterEntity.class);
         given(jpaOutboxRepository.findAllByOrderByCreatedAtAsc(PageRequest.of(0, BATCH_SIZE))).willReturn(List.of(poisonEntry));
+        String expectedErrorMessage = "Cannot convert outbox payload to Avro, type=UnknownEvent";
 
         // when
         outboxScheduler.processOutbox();
@@ -196,10 +197,9 @@ class OutboxSchedulerTest {
         assertAll(
                 () -> assertThat(deadLetter.getOriginalOutboxId()).isEqualTo(poisonEntry.getId()),
                 () -> assertThat(deadLetter.getAggregatedId()).isEqualTo(poisonEntry.getAggregateId()),
-                () -> assertThat(deadLetter.getType()).isEqualTo("UnknownEvent"),
+                () -> assertThat(deadLetter.getType()).isEqualTo(poisonEntry.getType()),
                 () -> assertThat(deadLetter.getPayload()).isEqualTo(poisonEntry.getPayload()),
-                () -> assertThat(deadLetter.getErrorMessage())
-                        .isEqualTo("Cannot convert outbox payload to Avro, type=UnknownEvent"),
+                () -> assertThat(deadLetter.getErrorMessage()).isEqualTo(expectedErrorMessage),
                 () -> assertThat(deadLetter.getCreatedAt()).isEqualTo(poisonEntry.getCreatedAt()),
                 () -> assertThat(deadLetter.getRetryCount()).isEqualTo(poisonEntry.getRetryCount()),
                 () -> assertThat(deadLetter.getFailedAt()).isNotNull()
@@ -223,7 +223,7 @@ class OutboxSchedulerTest {
         then(jpaDeadLetterRepository).should().save(deadLetterCaptor.capture());
         then(jpaOutboxRepository).should().delete(poisonEntry);
         then(kafkaTemplate).shouldHaveNoInteractions();
-        assertThat(deadLetterCaptor.getValue().getPayload()).isEqualTo("this is not json");
+        assertThat(deadLetterCaptor.getValue().getPayload()).isEqualTo(poisonEntry.getPayload());
     }
 
     @Test
@@ -276,12 +276,13 @@ class OutboxSchedulerTest {
         given(jpaOutboxRepository.findAllByOrderByCreatedAtAsc(PageRequest.of(0, BATCH_SIZE))).willReturn(List.of(entry));
         given(kafkaTemplate.send(expectedRecord))
                 .willReturn(CompletableFuture.failedFuture(new TimeoutException("Broker unavailable")));
+        int expectedRetryCount = 1;
 
         // when
         outboxScheduler.processOutbox();
 
         // then
-        assertThat(entry.getRetryCount()).isEqualTo(1);
+        assertThat(entry.getRetryCount()).isEqualTo(expectedRetryCount);
         then(jpaOutboxRepository).should().save(entry);
         then(jpaOutboxRepository).should(never()).delete(entry);
         then(jpaDeadLetterRepository).shouldHaveNoInteractions();
@@ -343,14 +344,16 @@ class OutboxSchedulerTest {
         given(jpaOutboxRepository.findAllByOrderByCreatedAtAsc(PageRequest.of(0, BATCH_SIZE))).willReturn(List.of(entry));
         given(kafkaTemplate.send(expectedRecord))
                 .willReturn(CompletableFuture.failedFuture(new TimeoutException("Broker unavailable")));
+        String expectedWarning = "failed (transient, attempt 1)";
+        String unexpectedAlert = "still failing";
 
         // when
         outboxScheduler.processOutbox();
 
         // then
         assertAll(
-                () -> assertThat(output).contains("failed (transient, attempt 1)"),
-                () -> assertThat(output).doesNotContain("still failing")
+                () -> assertThat(output).contains(expectedWarning),
+                () -> assertThat(output).doesNotContain(unexpectedAlert)
         );
     }
 
@@ -373,11 +376,12 @@ class OutboxSchedulerTest {
         given(jpaOutboxRepository.findAllByOrderByCreatedAtAsc(PageRequest.of(0, BATCH_SIZE))).willReturn(List.of(entry));
         given(kafkaTemplate.send(expectedRecord))
                 .willReturn(CompletableFuture.failedFuture(new TimeoutException("Broker unavailable")));
+        String expectedAlert = "still failing after 5 attempts";
 
         // when
         outboxScheduler.processOutbox();
 
         // then
-        assertThat(output).contains("still failing after 5 attempts");
+        assertThat(output).contains(expectedAlert);
     }
 }

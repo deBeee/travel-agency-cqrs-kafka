@@ -46,10 +46,11 @@ class HotelTest {
     void shouldThrowIllegalArgumentExceptionWhenCapacityIsNotPositive(long capacity) {
         // given
         Long id = 1L;
+        String expectedMessage = "Capacity must be positive";
 
         // when & then
         assertThatThrownBy(() -> new Hotel(id, capacity))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Capacity must be positive");
+                .hasMessage(expectedMessage);
     }
 }
