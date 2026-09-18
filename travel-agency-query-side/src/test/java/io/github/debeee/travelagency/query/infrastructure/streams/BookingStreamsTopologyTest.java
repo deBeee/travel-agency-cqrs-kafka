@@ -18,7 +18,6 @@ import org.apache.kafka.streams.state.KeyValueStore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,8 +41,7 @@ class BookingStreamsTopologyTest {
     void setUp() {
         AppTopicsProperties topics = new AppTopicsProperties(
                 BOOKINGS_TOPIC, AVAILABILITY_TOPIC, "travel.availability.DLT", "travel.hotels", "travel.hotels.DLT");
-        BookingStreamsTopology topology = new BookingStreamsTopology(topics);
-        ReflectionTestUtils.setField(topology, "schemaRegistryUrl", SCHEMA_REGISTRY_URL);
+        BookingStreamsTopology topology = new BookingStreamsTopology(topics, SCHEMA_REGISTRY_URL);
 
         StreamsBuilder builder = new StreamsBuilder();
         topology.dailyAvailabilityTopology(builder);

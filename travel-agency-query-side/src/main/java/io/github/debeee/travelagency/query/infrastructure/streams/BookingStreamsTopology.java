@@ -4,7 +4,6 @@ import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import io.github.debeee.travelagency.avro.AvailabilityUpdatedAvro;
 import io.github.debeee.travelagency.avro.BookingCreatedAvro;
 import io.github.debeee.travelagency.query.infrastructure.configuration.properties.AppTopicsProperties;
-import lombok.RequiredArgsConstructor;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.KeyValue;
@@ -26,13 +25,16 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
-@RequiredArgsConstructor
 public class BookingStreamsTopology {
 
     private final AppTopicsProperties topicsProperties;
+    private final String schemaRegistryUrl;
 
-    @Value("${spring.kafka.properties.schema.registry.url}")
-    private String schemaRegistryUrl;
+    public BookingStreamsTopology(AppTopicsProperties topicsProperties,
+                                  @Value("${spring.kafka.properties.schema.registry.url}") String schemaRegistryUrl) {
+        this.topicsProperties = topicsProperties;
+        this.schemaRegistryUrl = schemaRegistryUrl;
+    }
 
     @Bean
     public KStream<String, AvailabilityUpdatedAvro> dailyAvailabilityTopology(StreamsBuilder builder) {
