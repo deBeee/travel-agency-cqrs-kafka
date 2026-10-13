@@ -1,0 +1,292 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1580 1378" width="1580" height="1378" role="img"
+     aria-labelledby="title desc">
+  <title id="title">Booking flow: from POST /api/bookings to the availability snapshot the customer reads</title>
+  <desc id="desc">Sequence of a single booking: the write side validates capacity per day inside one MySQL transaction
+    and stores an outbox row, the outbox relay publishes BookingCreated to the travel.bookings topic, Kafka Streams
+    turns the date range into per-day occupancy on the travel.availability topic, the projection upserts availability
+    snapshots into MongoDB, and the customer reads them over REST.</desc>
+
+  <defs>
+    <marker id="m-sync" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10"
+            markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="m-ret" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10"
+            markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#64748b"/>
+    </marker>
+    <marker id="m-event" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11"
+            markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#b45309"/>
+    </marker>
+    <style>
+      .sans { font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2937; }
+      .mono { font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; fill: #1f2937; }
+      .h1   { font-size: 22px; font-weight: 700; }
+      .h2   { font-size: 13px; fill: #64748b; }
+      .grp  { font-size: 12px; font-weight: 700; }
+      .pt   { font-size: 14px; font-weight: 700; }
+      .tp   { font-size: 11.5px; font-weight: 700; fill: #78350f; }
+      .ts   { font-size: 10.5px; fill: #92400e; }
+      .lbl  { font-size: 12px; fill: #334155; }
+      .lbl2 { font-size: 11px; fill: #64748b; }
+      .lblm { font-size: 12px; fill: #334155; }
+      .note { font-size: 11.5px; fill: #334155; }
+      .tab  { font-size: 11px; font-weight: 700; fill: #475569; }
+      .guard{ font-size: 11px; fill: #475569; font-style: italic; }
+      .phase{ font-size: 11px; font-weight: 700; fill: #64748b; letter-spacing: 0.4px; }
+      .num  { font-size: 10px; font-weight: 700; fill: #ffffff; }
+      .pill { font-size: 11px; font-weight: 700; }
+      .leg  { font-size: 12px; fill: #475569; }
+      /* white halo so lifelines and borders never cut through a label */
+      .halo { paint-order: stroke fill; stroke: #ffffff; stroke-width: 4px; stroke-linejoin: round; }
+      .sync  { fill: none; stroke: #475569; stroke-width: 1.8; marker-end: url(#m-sync); }
+      .ret   { fill: none; stroke: #64748b; stroke-width: 1.6; stroke-dasharray: 5 4; marker-end: url(#m-ret); }
+      .event { fill: none; stroke: #b45309; stroke-width: 2.2; marker-end: url(#m-event); }
+      .life  { stroke: #94a3b8; stroke-width: 1.2; stroke-dasharray: 4 4; }
+      .grp-cmd { fill: #f5f9ff; stroke: #2563eb; stroke-width: 1.4; }
+      .grp-kfk { fill: #fffcf2; stroke: #d97706; stroke-width: 1.4; }
+      .grp-qry { fill: #f5fdfb; stroke: #0f766e; stroke-width: 1.4; }
+      .hd      { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .hd-topic { fill: #fef3c7; stroke: #d97706; stroke-width: 1.3; }
+      .frame { fill: none; stroke: #94a3b8; stroke-width: 1.2; stroke-dasharray: 6 4; }
+      .frame-tx { fill: none; stroke: #475569; stroke-width: 1.4; }
+      .tabbg { fill: #ffffff; stroke: #94a3b8; stroke-width: 1; }
+      .notebg{ fill: #f1f5f9; stroke: #cbd5e1; stroke-width: 1; }
+      .phaseln { stroke: #cbd5e1; stroke-width: 1; }
+      .badge { fill: #475569; }
+      .figure{ fill: none; stroke: #475569; stroke-width: 1.8; }
+    </style>
+  </defs>
+
+  <rect width="1580" height="1378" fill="#ffffff"/>
+
+  <!-- heading -->
+  <text x="40" y="44" class="sans h1">Booking flow: from POST /api/bookings to a readable availability snapshot</text>
+  <text x="40" y="68" class="sans h2">Happy path of one booking. The write side confirms first, the read side catches up asynchronously through Kafka.</text>
+
+  <!-- ============================== GROUPS ============================== -->
+  <rect x="190" y="82" width="520" height="1222" rx="12" class="grp-cmd"/>
+  <text x="204" y="100" class="sans grp" fill="#1e40af">travel-agency-command-side</text>
+  <rect x="730" y="82" width="305" height="1222" rx="12" class="grp-kfk"/>
+  <text x="744" y="100" class="sans grp" fill="#92400e">Apache Kafka (Avro topics)</text>
+  <rect x="1045" y="82" width="520" height="1222" rx="12" class="grp-qry"/>
+  <text x="1059" y="100" class="sans grp" fill="#115e59">travel-agency-query-side</text>
+
+  <!-- ============================== PHASE RULES ============================== -->
+  <line x1="40" y1="172" x2="1565" y2="172" class="phaseln"/>
+  <text x="46" y="176" class="sans phase halo">1. ACCEPT THE BOOKING (WRITE SIDE)</text>
+
+  <line x1="40" y1="590" x2="1565" y2="590" class="phaseln"/>
+  <text x="46" y="594" class="sans phase halo">2. PUBLISH THROUGH THE OUTBOX</text>
+
+  <line x1="40" y1="772" x2="1565" y2="772" class="phaseln"/>
+  <text x="46" y="776" class="sans phase halo">3. DATE RANGE → DAILY COUNTERS (KAFKA STREAMS)</text>
+
+  <line x1="40" y1="952" x2="1565" y2="952" class="phaseln"/>
+  <text x="46" y="956" class="sans phase halo">4. PROJECT AVAILABILITY SNAPSHOTS</text>
+
+  <line x1="40" y1="1146" x2="1565" y2="1146" class="phaseln"/>
+  <text x="46" y="1150" class="sans phase halo">5. READ THE AVAILABILITY</text>
+
+  <!-- ============================== LIFELINES ============================== -->
+  <line x1="100"  y1="163" x2="100"  y2="1286" class="life"/>
+  <line x1="270"  y1="152" x2="270"  y2="1286" class="life"/>
+  <line x1="450"  y1="152" x2="450"  y2="1286" class="life"/>
+  <line x1="630"  y1="152" x2="630"  y2="1286" class="life"/>
+  <line x1="808"  y1="152" x2="808"  y2="1286" class="life"/>
+  <line x1="957"  y1="152" x2="957"  y2="1286" class="life"/>
+  <line x1="1125" y1="152" x2="1125" y2="1286" class="life"/>
+  <line x1="1305" y1="152" x2="1305" y2="1286" class="life"/>
+  <line x1="1485" y1="152" x2="1485" y2="1286" class="life"/>
+
+  <!-- ============================== PARTICIPANTS ============================== -->
+  <g id="p-customer">
+    <circle cx="100" cy="114" r="7" class="figure"/>
+    <path d="M88,140 A12,12 0 0 1 112,140 Z" class="figure"/>
+    <text x="100" y="157" text-anchor="middle" class="sans pt" font-size="13">Customer</text>
+  </g>
+  <rect x="200" y="108" width="140" height="44" rx="8" class="hd"/>
+  <text x="270" y="135" text-anchor="middle" class="sans pt">Command API</text>
+  <rect x="380" y="108" width="140" height="44" rx="8" class="hd"/>
+  <text x="450" y="135" text-anchor="middle" class="sans pt">MySQL</text>
+  <rect x="560" y="108" width="140" height="44" rx="8" class="hd"/>
+  <text x="630" y="135" text-anchor="middle" class="sans pt">Outbox relay</text>
+
+  <rect x="738" y="108" width="140" height="44" rx="22" class="hd-topic"/>
+  <text x="808" y="127" text-anchor="middle" class="mono tp">travel.bookings</text>
+  <text x="808" y="142" text-anchor="middle" class="sans ts">BookingCreated</text>
+  <rect x="887" y="108" width="140" height="44" rx="22" class="hd-topic"/>
+  <text x="957" y="127" text-anchor="middle" class="mono tp">travel.availability</text>
+  <text x="957" y="142" text-anchor="middle" class="sans ts">AvailabilityUpdated</text>
+
+  <rect x="1055" y="108" width="140" height="44" rx="8" class="hd"/>
+  <text x="1125" y="135" text-anchor="middle" class="sans pt">Kafka Streams</text>
+  <rect x="1235" y="108" width="140" height="44" rx="8" class="hd"/>
+  <text x="1305" y="126" text-anchor="middle" class="sans pt" font-size="13">Projection &amp;</text>
+  <text x="1305" y="143" text-anchor="middle" class="sans pt" font-size="13">Query API</text>
+  <rect x="1415" y="108" width="140" height="44" rx="8" class="hd"/>
+  <text x="1485" y="135" text-anchor="middle" class="sans pt">MongoDB</text>
+
+  <!-- ============================== PHASE 1 ============================== -->
+  <!-- 1: POST -->
+  <text x="185" y="193" text-anchor="middle" class="mono lblm halo">POST /api/bookings</text>
+  <text x="185" y="206" text-anchor="middle" class="sans lbl2 halo">hotelId, userId, start, end</text>
+  <line x1="100" y1="219" x2="268" y2="219" class="sync"/>
+  <circle cx="114" cy="219" r="9" class="badge"/><text x="114" y="222.5" text-anchor="middle" class="sans num">1</text>
+
+  <!-- transaction frame -->
+  <rect x="208" y="234" width="304" height="281" rx="6" class="frame-tx"/>
+  <rect x="208" y="234" width="228" height="18" rx="4" class="tabbg"/>
+  <text x="215" y="247" class="sans tab">one DB transaction, READ_COMMITTED</text>
+
+  <!-- 2 -->
+  <text x="360" y="266" text-anchor="middle" class="sans lbl halo">SELECT hotel → capacity</text>
+  <line x1="270" y1="278" x2="448" y2="278" class="sync"/>
+  <circle cx="284" cy="278" r="9" class="badge"/><text x="284" y="281.5" text-anchor="middle" class="sans num">2</text>
+
+  <!-- 3 -->
+  <text x="360" y="300" text-anchor="middle" class="sans lbl halo">SELECT days [start..end] FOR UPDATE</text>
+  <line x1="270" y1="312" x2="448" y2="312" class="sync"/>
+  <circle cx="284" cy="312" r="9" class="badge"/><text x="284" y="315.5" text-anchor="middle" class="sans num">3</text>
+
+  <!-- rule note -->
+  <rect x="216" y="324" width="288" height="22" rx="4" class="notebg"/>
+  <text x="360" y="339" text-anchor="middle" class="sans note">per day: occupied &lt; capacity → +1, else reject</text>
+
+  <!-- alt frame -->
+  <rect x="214" y="358" width="292" height="149" rx="6" class="frame"/>
+  <rect x="214" y="358" width="34" height="16" rx="3" class="tabbg"/>
+  <text x="221" y="370" class="sans tab">alt</text>
+  <text x="254" y="370" class="sans guard halo">[any day is full]</text>
+  <!-- 4: 409 -->
+  <text x="202" y="386" text-anchor="end" class="sans lbl halo">409 Conflict, nothing persisted</text>
+  <line x1="270" y1="398" x2="102" y2="398" class="ret"/>
+  <circle cx="256" cy="398" r="9" class="badge"/><text x="256" y="401.5" text-anchor="middle" class="sans num">4</text>
+  <!-- operand separator -->
+  <line x1="214" y1="414" x2="506" y2="414" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="222" y="428" class="sans guard halo">[all days reserved]</text>
+  <!-- 5 -->
+  <text x="360" y="446" text-anchor="middle" class="sans lbl halo">UPSERT day counters, INSERT booking</text>
+  <text x="360" y="459" text-anchor="middle" class="sans lbl halo">INSERT outbox row</text>
+  <line x1="270" y1="471" x2="448" y2="471" class="sync"/>
+  <circle cx="284" cy="471" r="9" class="badge"/><text x="284" y="474.5" text-anchor="middle" class="sans num">5</text>
+  <!-- 6: commit -->
+  <text x="360" y="485" text-anchor="middle" class="sans lbl halo">COMMIT</text>
+  <line x1="270" y1="497" x2="448" y2="497" class="sync"/>
+  <circle cx="284" cy="497" r="9" class="badge"/><text x="284" y="500.5" text-anchor="middle" class="sans num">6</text>
+
+  <!-- 7: 201 -->
+  <text x="185" y="529" text-anchor="middle" class="sans lbl halo">201 Created (bookingId)</text>
+  <line x1="270" y1="541" x2="102" y2="541" class="ret"/>
+  <circle cx="256" cy="541" r="9" class="badge"/><text x="256" y="544.5" text-anchor="middle" class="sans num">7</text>
+
+  <!-- consistency note -->
+  <rect x="60" y="553" width="640" height="22" rx="4" class="notebg"/>
+  <text x="380" y="568" text-anchor="middle" class="sans note">Booking confirmed. The read side has not seen it yet (eventual consistency, typically milliseconds).</text>
+
+  <!-- ============================== PHASE 2 ============================== -->
+  <rect x="420" y="608" width="440" height="148" rx="6" class="frame"/>
+  <rect x="420" y="608" width="282" height="18" rx="4" class="tabbg"/>
+  <text x="427" y="621" class="sans tab">loop every 1 s, ShedLock, batch ≤ 50, at-least-once</text>
+
+  <!-- 8 -->
+  <text x="540" y="642" text-anchor="middle" class="sans lbl halo">SELECT oldest pending outbox rows</text>
+  <line x1="630" y1="654" x2="452" y2="654" class="sync"/>
+  <circle cx="616" cy="654" r="9" class="badge"/><text x="616" y="657.5" text-anchor="middle" class="sans num">8</text>
+
+  <!-- 9 -->
+  <text x="719" y="674" text-anchor="middle" class="sans lbl halo">BookingCreated (Avro), key = hotelId</text>
+  <line x1="630" y1="686" x2="806" y2="686" class="event"/>
+  <circle cx="644" cy="686" r="9" class="badge"/><text x="644" y="689.5" text-anchor="middle" class="sans num">9</text>
+
+  <!-- 10 -->
+  <text x="719" y="702" text-anchor="middle" class="sans lbl halo">broker ack</text>
+  <line x1="808" y1="714" x2="632" y2="714" class="ret"/>
+  <circle cx="794" cy="714" r="9" class="badge"/><text x="794" y="717.5" text-anchor="middle" class="sans num">10</text>
+
+  <!-- 11 -->
+  <text x="540" y="730" text-anchor="middle" class="sans lbl halo">DELETE outbox row</text>
+  <line x1="630" y1="742" x2="452" y2="742" class="sync"/>
+  <circle cx="616" cy="742" r="9" class="badge"/><text x="616" y="745.5" text-anchor="middle" class="sans num">11</text>
+
+  <!-- ============================== PHASE 3 ============================== -->
+  <!-- 12 -->
+  <text x="966" y="788" text-anchor="middle" class="sans lbl halo">BookingCreated</text>
+  <line x1="808" y1="800" x2="1123" y2="800" class="event"/>
+  <circle cx="822" cy="800" r="9" class="badge"/><text x="822" y="803.5" text-anchor="middle" class="sans num">12</text>
+
+  <!-- streams note -->
+  <rect x="1052" y="814" width="224" height="52" rx="4" class="notebg"/>
+  <text x="1164" y="829" text-anchor="middle" class="sans note">flatMap: 1 booking → N days</text>
+  <text x="1164" y="844" text-anchor="middle" class="sans note">key hotelId:date, value +1</text>
+  <text x="1164" y="859" text-anchor="middle" class="sans note">aggregate → KTable occupancy-store</text>
+
+  <!-- 13 -->
+  <text x="1041" y="881" text-anchor="middle" class="sans lbl halo">AvailabilityUpdated × N</text>
+  <text x="1041" y="894" text-anchor="middle" class="sans lbl2 halo">occupied is absolute, key = hotelId</text>
+  <line x1="1125" y1="906" x2="959" y2="906" class="event"/>
+  <circle cx="1111" cy="906" r="9" class="badge"/><text x="1111" y="909.5" text-anchor="middle" class="sans num">13</text>
+  <rect x="1135" y="896" width="92" height="20" rx="10" fill="#ccfbf1"/>
+  <text x="1181" y="910" text-anchor="middle" class="sans pill" fill="#115e59">exactly-once</text>
+
+  <!-- ============================== PHASE 4 ============================== -->
+  <rect x="900" y="970" width="650" height="152" rx="6" class="frame"/>
+  <rect x="900" y="970" width="190" height="18" rx="4" class="tabbg"/>
+  <text x="907" y="983" class="sans tab">loop for each AvailabilityUpdated</text>
+
+  <!-- 14 -->
+  <text x="1195" y="996" text-anchor="middle" class="sans lbl halo">AvailabilityUpdated (one day)</text>
+  <line x1="957" y1="1008" x2="1303" y2="1008" class="event"/>
+  <circle cx="971" cy="1008" r="9" class="badge"/><text x="971" y="1011.5" text-anchor="middle" class="sans num">14</text>
+
+  <!-- 15 -->
+  <text x="1395" y="1026" text-anchor="middle" class="sans lbl halo">capacity: cache → hotels → default</text>
+  <line x1="1305" y1="1038" x2="1483" y2="1038" class="sync"/>
+  <circle cx="1319" cy="1038" r="9" class="badge"/><text x="1319" y="1041.5" text-anchor="middle" class="sans num">15</text>
+
+  <!-- status note -->
+  <rect x="1250" y="1052" width="290" height="22" rx="4" class="notebg"/>
+  <text x="1395" y="1067" text-anchor="middle" class="sans note">status: SOLD_OUT, LAST_ROOMS (≥ 90%) or AVAILABLE</text>
+
+  <!-- 16 -->
+  <text x="1395" y="1089" text-anchor="middle" class="sans lbl halo">upsert availability snapshot (idempotent)</text>
+  <text x="1395" y="1102" text-anchor="middle" class="sans lbl2 halo">hotelId, date, occupied, capacity, status</text>
+  <line x1="1305" y1="1114" x2="1483" y2="1114" class="sync"/>
+  <circle cx="1319" cy="1114" r="9" class="badge"/><text x="1319" y="1117.5" text-anchor="middle" class="sans num">16</text>
+
+  <!-- ============================== PHASE 5 ============================== -->
+  <!-- 17 -->
+  <text x="687" y="1166" text-anchor="middle" class="mono lblm halo">GET /api/availability/{hotelId}?from&amp;to</text>
+  <line x1="100" y1="1178" x2="1303" y2="1178" class="sync"/>
+  <circle cx="114" cy="1178" r="9" class="badge"/><text x="114" y="1181.5" text-anchor="middle" class="sans num">17</text>
+
+  <!-- 18 -->
+  <text x="1395" y="1194" text-anchor="middle" class="sans lbl halo">find by hotelId, date range</text>
+  <line x1="1305" y1="1206" x2="1483" y2="1206" class="sync"/>
+  <circle cx="1319" cy="1206" r="9" class="badge"/><text x="1319" y="1209.5" text-anchor="middle" class="sans num">18</text>
+
+  <!-- 19 -->
+  <text x="1395" y="1220" text-anchor="middle" class="sans lbl halo">day snapshots</text>
+  <line x1="1485" y1="1232" x2="1307" y2="1232" class="ret"/>
+  <circle cx="1471" cy="1232" r="9" class="badge"/><text x="1471" y="1235.5" text-anchor="middle" class="sans num">19</text>
+
+  <!-- 20 -->
+  <text x="687" y="1252" text-anchor="middle" class="sans lbl halo">200 OK with [ { date, occupied, capacity, freeRooms, status }, ... ], no computation on read</text>
+  <line x1="1305" y1="1264" x2="102" y2="1264" class="ret"/>
+  <circle cx="1291" cy="1264" r="9" class="badge"/><text x="1291" y="1267.5" text-anchor="middle" class="sans num">20</text>
+
+  <!-- ============================== LEGEND ============================== -->
+  <line x1="40" y1="1340" x2="80" y2="1340" class="sync"/>
+  <text x="90" y="1344" class="sans leg">synchronous call</text>
+  <line x1="220" y1="1340" x2="260" y2="1340" class="ret"/>
+  <text x="270" y="1344" class="sans leg">response</text>
+  <line x1="360" y1="1340" x2="400" y2="1340" class="event"/>
+  <text x="410" y="1344" class="sans leg">Kafka event (async, Avro)</text>
+  <rect x="600" y="1330" width="40" height="18" rx="4" class="notebg"/>
+  <text x="650" y="1344" class="sans leg">note / rule</text>
+  <rect x="760" y="1330" width="40" height="18" rx="4" class="frame"/>
+  <text x="810" y="1344" class="sans leg">loop or alternative</text>
+  <rect x="960" y="1330" width="40" height="18" rx="4" class="frame-tx"/>
+  <text x="1010" y="1344" class="sans leg">DB transaction boundary</text>
+</svg>

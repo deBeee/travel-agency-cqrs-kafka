@@ -1,0 +1,205 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1580 810" width="1580" height="810" role="img"
+     aria-labelledby="title desc">
+  <title id="title">Kafka Streams topology: booking date ranges become per-day occupancy counters</title>
+  <desc id="desc">The topology reads BookingCreated from travel.bookings, flatMaps each booking into one fact per day
+    keyed by hotelId:date, repartitions, aggregates the facts into a KTable backed by the occupancy-store (RocksDB plus
+    changelog), maps the counters back to the hotelId key and writes AvailabilityUpdated to travel.availability. A worked
+    example and the exactly-once, ordering, state and error-handling guarantees are shown below the pipeline.</desc>
+
+  <defs>
+    <marker id="a-sync" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10"
+            markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="a-event" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11"
+            markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#b45309"/>
+    </marker>
+    <marker id="a-thin" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8"
+            markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#94a3b8"/>
+    </marker>
+    <style>
+      .sans { font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2937; }
+      .mono { font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; fill: #1f2937; }
+      .h1   { font-size: 22px; font-weight: 700; }
+      .h2   { font-size: 13px; fill: #64748b; }
+      .grp  { font-size: 12px; font-weight: 700; fill: #115e59; }
+      .sec  { font-size: 11px; font-weight: 700; fill: #64748b; letter-spacing: 0.4px; }
+      .nt   { font-size: 14px; font-weight: 700; }
+      .nd   { font-size: 11.5px; fill: #475569; }
+      .tp   { font-size: 13px; font-weight: 700; fill: #78350f; }
+      .ts   { font-size: 11px; fill: #92400e; }
+      .ti   { font-size: 10.5px; fill: #92400e; }
+      .lbl  { font-size: 11px; fill: #64748b; font-style: italic; }
+      .ch   { font-size: 11px; font-weight: 700; fill: #64748b; }
+      .cm   { font-size: 10.5px; fill: #1f2937; }
+      .cn   { font-size: 10.5px; fill: #64748b; font-style: italic; }
+      .gt   { font-size: 12.5px; font-weight: 700; }
+      .gd   { font-size: 11.5px; fill: #334155; }
+      .leg  { font-size: 12px; fill: #475569; }
+      .sync  { fill: none; stroke: #475569; stroke-width: 1.8; marker-end: url(#a-sync); }
+      .event { fill: none; stroke: #b45309; stroke-width: 2.2; marker-end: url(#a-event); }
+      .thin  { fill: none; stroke: #94a3b8; stroke-width: 1.2; marker-end: url(#a-thin); }
+      .grp-qry { fill: #f0fdfa; stroke: #0f766e; stroke-width: 1.4; }
+      .op    { fill: #ffffff; stroke: #0f766e; stroke-width: 1.4; }
+      .topic { fill: #fef3c7; stroke: #d97706; stroke-width: 1.4; }
+      .itopic{ fill: #fffbeb; stroke: #d97706; stroke-width: 1.2; stroke-dasharray: 5 3; }
+      .store { fill: #ffffff; stroke: #64748b; stroke-width: 1.3; }
+      .card  { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .gbox  { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.2; }
+    </style>
+  </defs>
+
+  <rect width="1580" height="810" fill="#ffffff"/>
+
+  <!-- heading -->
+  <text x="40" y="44" class="sans h1">Kafka Streams topology: booking date ranges → daily occupancy counters</text>
+  <text x="40" y="68" class="sans h2">BookingStreamsTopology in travel-agency-query-side, application.id travel-agency-query-side-streams, exactly_once_v2, 3 partitions, 3 stream threads</text>
+
+  <!-- ============================== TOPOLOGY ============================== -->
+  <rect x="262" y="96" width="1066" height="304" rx="12" class="grp-qry"/>
+  <text x="276" y="114" class="sans grp">travel-agency-query-side / infrastructure.streams</text>
+
+  <!-- 1 source topic -->
+  <rect x="40" y="130" width="190" height="90" rx="14" class="topic"/>
+  <text x="135" y="160" text-anchor="middle" class="mono tp">travel.bookings</text>
+  <text x="135" y="180" text-anchor="middle" class="sans ts">BookingCreated (Avro)</text>
+  <text x="135" y="198" text-anchor="middle" class="sans ts">key = hotelId</text>
+  <line x1="230" y1="175" x2="288" y2="175" class="event"/>
+
+  <!-- 2 flatMap -->
+  <rect x="290" y="130" width="200" height="90" rx="8" class="op"/>
+  <text x="390" y="157" text-anchor="middle" class="sans nt">flatMap</text>
+  <text x="390" y="178" text-anchor="middle" class="sans nd">1 booking → N daily facts</text>
+  <text x="390" y="196" text-anchor="middle" class="sans nd">key hotelId:date, value 1</text>
+  <line x1="490" y1="175" x2="548" y2="175" class="event"/>
+
+  <!-- 3 repartition topic -->
+  <rect x="550" y="130" width="220" height="90" rx="14" class="itopic"/>
+  <text x="660" y="157" text-anchor="middle" class="mono ti">…-occupancy-store-repartition</text>
+  <text x="660" y="178" text-anchor="middle" class="sans ts">internal topic, created by Streams</text>
+  <text x="660" y="196" text-anchor="middle" class="sans ts">co-partitions facts by the new key</text>
+  <line x1="770" y1="175" x2="828" y2="175" class="event"/>
+
+  <!-- 4 aggregate -->
+  <rect x="830" y="130" width="230" height="90" rx="8" class="op"/>
+  <text x="945" y="157" text-anchor="middle" class="sans nt">groupByKey + aggregate</text>
+  <text x="945" y="178" text-anchor="middle" class="sans nd">sum per (hotel, day) → KTable</text>
+  <text x="945" y="196" text-anchor="middle" class="sans nd">init 0, (key, 1, agg) → agg + 1</text>
+  <line x1="1060" y1="175" x2="1118" y2="175" class="sync"/>
+
+  <!-- state store + changelog -->
+  <line x1="945" y1="220" x2="945" y2="260" class="sync"/>
+  <text x="953" y="244" class="sans lbl">get / put</text>
+  <path d="M870,270 a75,8 0 0 1 150,0 v44 a75,8 0 0 1 -150,0 z" class="store"/>
+  <ellipse cx="945" cy="270" rx="75" ry="8" class="store"/>
+  <text x="945" y="294" text-anchor="middle" class="sans nt" font-size="12.5">occupancy-store</text>
+  <text x="945" y="310" text-anchor="middle" class="sans nd">RocksDB, state.dir volume</text>
+  <line x1="945" y1="322" x2="945" y2="344" class="sync"/>
+  <text x="953" y="338" class="sans lbl">every update</text>
+  <rect x="820" y="346" width="250" height="40" rx="14" class="itopic"/>
+  <text x="945" y="363" text-anchor="middle" class="mono ti">…-occupancy-store-changelog</text>
+  <text x="945" y="378" text-anchor="middle" class="sans ts">internal topic, store recovery after restart</text>
+
+  <!-- 5 map -->
+  <rect x="1120" y="130" width="180" height="90" rx="8" class="op"/>
+  <text x="1210" y="157" text-anchor="middle" class="sans nt">toStream + map</text>
+  <text x="1210" y="178" text-anchor="middle" class="sans nd">split hotelId:date</text>
+  <text x="1210" y="196" text-anchor="middle" class="sans nd">key back to hotelId</text>
+  <line x1="1300" y1="175" x2="1358" y2="175" class="event"/>
+
+  <!-- 6 sink topic -->
+  <rect x="1360" y="130" width="180" height="90" rx="14" class="topic"/>
+  <text x="1450" y="160" text-anchor="middle" class="mono tp">travel.availability</text>
+  <text x="1450" y="180" text-anchor="middle" class="sans ts">AvailabilityUpdated (Avro)</text>
+  <text x="1450" y="198" text-anchor="middle" class="sans ts">key = hotelId</text>
+
+  <!-- ============================== WORKED EXAMPLE ============================== -->
+  <text x="40" y="432" class="sans sec">WORKED EXAMPLE: BOOKING #51, HOTEL 100, USER 7, 2026-07-01 → 2026-07-03 (END DATE INCLUSIVE)</text>
+
+  <!-- card A -->
+  <rect x="40" y="448" width="190" height="114" rx="8" class="card"/>
+  <text x="52" y="466" class="sans ch">input record</text>
+  <text x="52" y="484" class="mono cm" xml:space="preserve">key   100</text>
+  <text x="52" y="498" class="mono cm">value BookingCreated</text>
+  <text x="52" y="512" class="mono cm" xml:space="preserve">  id 51, hotelId 100</text>
+  <text x="52" y="526" class="mono cm" xml:space="preserve">  userId 7</text>
+  <text x="52" y="540" class="mono cm" xml:space="preserve">  start 2026-07-01</text>
+  <text x="52" y="554" class="mono cm" xml:space="preserve">  end   2026-07-03</text>
+  <line x1="230" y1="505" x2="288" y2="505" class="thin"/>
+
+  <!-- card B -->
+  <rect x="290" y="448" width="480" height="114" rx="8" class="card"/>
+  <text x="302" y="466" class="sans ch">after flatMap: 3 facts with the new key</text>
+  <text x="302" y="484" class="mono cm">100:2026-07-01 → 1</text>
+  <text x="302" y="498" class="mono cm">100:2026-07-02 → 1</text>
+  <text x="302" y="512" class="mono cm">100:2026-07-03 → 1</text>
+  <text x="302" y="534" class="sans cn">repartitioned by the new key: every fact for a given (hotel, day)</text>
+  <text x="302" y="549" class="sans cn">lands on the same partition, whichever booking produced it</text>
+  <line x1="770" y1="505" x2="828" y2="505" class="thin"/>
+
+  <!-- card C -->
+  <rect x="830" y="448" width="230" height="114" rx="8" class="card"/>
+  <text x="842" y="466" class="sans ch">KTable before → after</text>
+  <text x="842" y="484" class="mono cm" xml:space="preserve">100:2026-07-01   4 → 5</text>
+  <text x="842" y="498" class="mono cm" xml:space="preserve">100:2026-07-02   9 → 10</text>
+  <text x="842" y="512" class="mono cm" xml:space="preserve">100:2026-07-03   0 → 1</text>
+  <text x="842" y="534" class="sans cn">one counter per (hotel, day),</text>
+  <text x="842" y="549" class="sans cn">kept in occupancy-store</text>
+  <line x1="1060" y1="505" x2="1118" y2="505" class="thin"/>
+
+  <!-- card D -->
+  <rect x="1120" y="448" width="420" height="114" rx="8" class="card"/>
+  <text x="1132" y="466" class="sans ch">output records: key → AvailabilityUpdated</text>
+  <text x="1132" y="484" class="mono cm">100 → { hotelId 100, date 2026-07-01, occupied 5 }</text>
+  <text x="1132" y="498" class="mono cm">100 → { hotelId 100, date 2026-07-02, occupied 10 }</text>
+  <text x="1132" y="512" class="mono cm">100 → { hotelId 100, date 2026-07-03, occupied 1 }</text>
+  <text x="1132" y="534" class="sans cn">absolute counts, not deltas: the MongoDB projection can</text>
+  <text x="1132" y="549" class="sans cn">upsert them idempotently, replays are harmless</text>
+
+  <!-- ============================== GUARANTEES ============================== -->
+  <text x="40" y="604" class="sans sec">GUARANTEES AND FAILURE HANDLING</text>
+
+  <rect x="40" y="620" width="363" height="112" rx="8" class="gbox"/>
+  <text x="52" y="642" class="sans gt">Exactly-once</text>
+  <text x="52" y="662" class="sans gd">processing.guarantee = exactly_once_v2: consuming</text>
+  <text x="52" y="677" class="sans gd">the input, updating occupancy-store and producing</text>
+  <text x="52" y="692" class="sans gd">the output form one Kafka transaction. A crash</text>
+  <text x="52" y="707" class="sans gd">halfway never counts a day twice or skips it.</text>
+
+  <rect x="419" y="620" width="363" height="112" rx="8" class="gbox"/>
+  <text x="431" y="642" class="sans gt">Ordering per hotel</text>
+  <text x="431" y="662" class="sans gd">key = hotelId on both travel.bookings and</text>
+  <text x="431" y="677" class="sans gd">travel.availability: all events of one hotel stay</text>
+  <text x="431" y="692" class="sans gd">on one partition and are processed in order.</text>
+  <text x="431" y="707" class="sans gd">3 partitions, 3 stream threads: different hotels</text>
+  <text x="431" y="722" class="sans gd">are processed in parallel.</text>
+
+  <rect x="798" y="620" width="363" height="112" rx="8" class="gbox"/>
+  <text x="810" y="642" class="sans gt">Durable state</text>
+  <text x="810" y="662" class="sans gd">occupancy-store lives in RocksDB (state.dir volume)</text>
+  <text x="810" y="677" class="sans gd">and is mirrored to a changelog topic. After a</text>
+  <text x="810" y="692" class="sans gd">restart or a rebalance the store is rebuilt from</text>
+  <text x="810" y="707" class="sans gd">the changelog, so the counters are never lost.</text>
+
+  <rect x="1177" y="620" width="363" height="112" rx="8" class="gbox"/>
+  <text x="1189" y="642" class="sans gt">Error handling</text>
+  <text x="1189" y="662" class="sans gd">LogAndContinueExceptionHandler: a record that</text>
+  <text x="1189" y="677" class="sans gd">cannot be deserialized is logged and skipped.</text>
+  <text x="1189" y="692" class="sans gd">Uncaught exception → REPLACE_THREAD: the stream</text>
+  <text x="1189" y="707" class="sans gd">thread is replaced instead of shutting the whole</text>
+  <text x="1189" y="722" class="sans gd">client down.</text>
+
+  <!-- ============================== LEGEND ============================== -->
+  <line x1="40" y1="776" x2="80" y2="776" class="event"/>
+  <text x="90" y="780" class="sans leg">Kafka hop (through a topic)</text>
+  <line x1="280" y1="776" x2="320" y2="776" class="sync"/>
+  <text x="330" y="780" class="sans leg">in-process step</text>
+  <rect x="460" y="767" width="40" height="18" rx="7" class="topic"/>
+  <text x="510" y="780" class="sans leg">public topic</text>
+  <rect x="620" y="767" width="40" height="18" rx="7" class="itopic"/>
+  <text x="670" y="780" class="sans leg">internal topic (prefixed with application.id)</text>
+  <rect x="960" y="767" width="40" height="18" rx="4" class="op"/>
+  <text x="1010" y="780" class="sans leg">Streams operator</text>
+</svg>

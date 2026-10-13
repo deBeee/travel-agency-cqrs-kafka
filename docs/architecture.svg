@@ -1,0 +1,239 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 800" width="1420" height="800" role="img"
+     aria-labelledby="title desc">
+  <title id="title">Travel Agency: CQRS booking system on Apache Kafka, container view</title>
+  <desc id="desc">The write side (Spring Boot, MySQL) validates bookings per day and publishes events through a
+    transactional outbox to Kafka. The read side (Spring Boot, Kafka Streams, MongoDB) turns booking date ranges into
+    per-day occupancy, projects availability snapshots into MongoDB and serves them over REST.</desc>
+
+  <defs>
+    <marker id="arrow-sync" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10"
+            markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-event" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="11" markerHeight="11"
+            markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#b45309"/>
+    </marker>
+    <marker id="arrow-error" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10"
+            markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#94a3b8"/>
+    </marker>
+    <style>
+      .sans { font-family: Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; fill: #1f2937; }
+      .mono { font-family: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; fill: #1f2937; }
+      .h1   { font-size: 22px; font-weight: 700; }
+      .h2   { font-size: 13px; fill: #64748b; }
+      .ct   { font-size: 16px; font-weight: 700; }
+      .cs   { font-size: 12px; fill: #64748b; }
+      .bt   { font-size: 15px; font-weight: 700; }
+      .bd   { font-size: 12px; fill: #475569; }
+      .bm   { font-size: 12px; fill: #334155; }
+      .pill { font-size: 11px; font-weight: 700; }
+      .lbl  { font-size: 11.5px; fill: #64748b; font-style: italic; }
+      .num  { font-size: 11px; font-weight: 700; fill: #ffffff; }
+      .tp   { font-size: 13px; font-weight: 700; fill: #78350f; }
+      .ts   { font-size: 11.5px; fill: #92400e; }
+      .dl   { font-size: 11px; fill: #64748b; }
+      .note { font-size: 11.5px; fill: #78350f; }
+      .actor{ font-size: 13px; font-weight: 600; }
+      .sync  { fill: none; stroke: #475569; stroke-width: 1.8; marker-end: url(#arrow-sync); }
+      .event { fill: none; stroke: #b45309; stroke-width: 2.2; marker-end: url(#arrow-event); }
+      .err   { fill: none; stroke: #94a3b8; stroke-width: 1.6; stroke-dasharray: 5 4; marker-end: url(#arrow-error); }
+      .box   { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.2; }
+      .cont-cmd { fill: #eff6ff; stroke: #2563eb; stroke-width: 1.6; }
+      .cont-kfk { fill: #fffbeb; stroke: #d97706; stroke-width: 1.6; }
+      .cont-qry { fill: #f0fdfa; stroke: #0f766e; stroke-width: 1.6; }
+      .topic { fill: #fef3c7; stroke: #d97706; stroke-width: 1.4; }
+      .dlt   { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.2; stroke-dasharray: 4 3; }
+      .badge { fill: #b45309; }
+      .figure { fill: none; stroke: #475569; stroke-width: 1.8; }
+    </style>
+  </defs>
+
+  <!-- canvas -->
+  <rect width="1420" height="800" fill="#ffffff"/>
+
+  <!-- heading -->
+  <text x="40" y="44" class="sans h1">Travel Agency: CQRS booking system on Apache Kafka</text>
+  <text x="40" y="68" class="sans h2">Container view: strongly consistent write side, event backbone, eventually consistent read side</text>
+
+  <!-- ============================== LEFT ACTORS ============================== -->
+  <g id="actor-operator">
+    <circle cx="95" cy="150" r="8" class="figure"/>
+    <path d="M80,186 A15,15 0 0 1 110,186 Z" class="figure"/>
+    <text x="95" y="204" text-anchor="middle" class="sans actor">Hotel operator</text>
+    <text x="95" y="220" text-anchor="middle" class="sans dl">registers hotels,</text>
+    <text x="95" y="234" text-anchor="middle" class="sans dl">updates capacity</text>
+    <polyline points="122,165 155,165 155,216 188,216" class="sync"/>
+  </g>
+  <g id="actor-customer-books">
+    <circle cx="95" cy="262" r="8" class="figure"/>
+    <path d="M80,298 A15,15 0 0 1 110,298 Z" class="figure"/>
+    <text x="95" y="316" text-anchor="middle" class="sans actor">Customer</text>
+    <text x="95" y="332" text-anchor="middle" class="sans dl">books a stay</text>
+    <polyline points="122,277 155,277 155,245 188,245" class="sync"/>
+  </g>
+
+  <!-- ============================== COMMAND SIDE ============================== -->
+  <rect x="170" y="100" width="380" height="590" rx="12" class="cont-cmd"/>
+  <text x="190" y="126" class="sans ct">travel-agency-command-side</text>
+  <text x="190" y="146" class="sans cs">Spring Boot 4, Java 21, hexagonal, port 8080, write side</text>
+
+  <!-- REST -->
+  <rect x="190" y="170" width="340" height="92" rx="8" class="box"/>
+  <text x="205" y="191" class="sans bt">REST API</text>
+  <text x="205" y="211" class="mono bm">POST /api/hotels</text>
+  <text x="205" y="230" class="mono bm" xml:space="preserve">PUT  /api/hotels/{id}</text>
+  <text x="205" y="249" class="mono bm">POST /api/bookings</text>
+  <line x1="360" y1="262" x2="360" y2="288" class="sync"/>
+
+  <!-- services -->
+  <rect x="190" y="290" width="340" height="80" rx="8" class="box"/>
+  <text x="205" y="313" class="sans bt">Application services</text>
+  <text x="205" y="334" class="sans bd">hotel and booking use cases, @Transactional, retry</text>
+  <text x="205" y="353" class="sans bd">per-day capacity lock (SELECT … FOR UPDATE)</text>
+  <line x1="360" y1="370" x2="360" y2="408" class="sync"/>
+  <text x="372" y="386" class="sans lbl">same DB transaction:</text>
+  <text x="372" y="401" class="sans lbl">booking + outbox row</text>
+
+  <!-- MySQL cylinder -->
+  <path d="M190,420 a170,10 0 0 1 340,0 v80 a170,10 0 0 1 -340,0 z" class="box"/>
+  <ellipse cx="360" cy="420" rx="170" ry="10" class="box"/>
+  <text x="205" y="446" class="sans bt">MySQL</text>
+  <text x="205" y="468" class="mono bm">hotels, bookings, daily_availabilities</text>
+  <text x="205" y="488" class="mono bm">outbox, dead_letter_outbox</text>
+  <line x1="360" y1="510" x2="360" y2="548" class="sync"/>
+  <text x="372" y="534" class="sans lbl">polls outbox every 1 s</text>
+
+  <!-- outbox relay -->
+  <rect x="190" y="550" width="340" height="80" rx="8" class="box"/>
+  <text x="205" y="573" class="sans bt">Outbox relay</text>
+  <text x="205" y="594" class="sans bd">@Scheduled, ShedLock, Avro producer</text>
+  <rect x="205" y="604" width="150" height="20" rx="10" fill="#dbeafe"/>
+  <text x="280" y="618" text-anchor="middle" class="sans pill" fill="#1e40af">at-least-once delivery</text>
+
+  <!-- hops 1 and 2: relay -> topics -->
+  <polyline points="530,572 580,572 580,195 633,195" class="event"/>
+  <polyline points="530,602 600,602 600,412 633,412" class="event"/>
+  <circle cx="565" cy="572" r="10" class="badge"/>
+  <text x="565" y="576" text-anchor="middle" class="sans num">2</text>
+  <circle cx="575" cy="602" r="10" class="badge"/>
+  <text x="575" y="606" text-anchor="middle" class="sans num">1</text>
+
+  <!-- ============================== KAFKA ============================== -->
+  <rect x="620" y="100" width="250" height="590" rx="12" class="cont-kfk"/>
+  <text x="635" y="126" class="sans ct">Apache Kafka</text>
+  <text x="635" y="146" class="sans cs">KRaft, Avro, 3 partitions per topic</text>
+
+  <!-- travel.bookings -->
+  <rect x="635" y="170" width="220" height="50" rx="25" class="topic"/>
+  <text x="745" y="191" text-anchor="middle" class="mono tp">travel.bookings</text>
+  <text x="745" y="208" text-anchor="middle" class="sans ts">BookingCreated (Avro)</text>
+
+  <!-- travel.availability -->
+  <rect x="635" y="290" width="220" height="50" rx="25" class="topic"/>
+  <text x="745" y="311" text-anchor="middle" class="mono tp">travel.availability</text>
+  <text x="745" y="328" text-anchor="middle" class="sans ts">AvailabilityUpdated (Avro)</text>
+
+  <!-- travel.hotels -->
+  <rect x="635" y="387" width="220" height="50" rx="25" class="topic"/>
+  <text x="745" y="408" text-anchor="middle" class="mono tp">travel.hotels</text>
+  <text x="745" y="425" text-anchor="middle" class="sans ts">HotelUpserted (Avro), compacted</text>
+
+  <!-- dead letter topics -->
+  <rect x="635" y="480" width="220" height="56" rx="10" class="dlt"/>
+  <text x="745" y="498" text-anchor="middle" class="mono dl">travel.availability.DLT</text>
+  <text x="745" y="513" text-anchor="middle" class="mono dl">travel.hotels.DLT</text>
+  <text x="745" y="529" text-anchor="middle" class="sans lbl">unreadable or retries exhausted</text>
+
+  <!-- key note -->
+  <rect x="635" y="552" width="220" height="56" rx="8" fill="#fef3c7" stroke="none"/>
+  <text x="745" y="570" text-anchor="middle" class="sans note" font-weight="700">key = hotelId on every topic</text>
+  <text x="745" y="586" text-anchor="middle" class="sans note">in order per hotel,</text>
+  <text x="745" y="601" text-anchor="middle" class="sans note">parallel across hotels</text>
+
+  <!-- schema registry -->
+  <rect x="635" y="622" width="220" height="54" rx="8" class="box"/>
+  <text x="745" y="644" text-anchor="middle" class="sans bt" font-size="14">Schema Registry</text>
+  <text x="745" y="663" text-anchor="middle" class="sans bd">Avro schema per topic</text>
+
+  <!-- hops 3..6 and error path -->
+  <polyline points="855,195 918,195" class="event"/>
+  <circle cx="887" cy="195" r="10" class="badge"/>
+  <text x="887" y="199" text-anchor="middle" class="sans num">3</text>
+
+  <polyline points="940,232 800,232 800,288" class="event"/>
+  <circle cx="887" cy="232" r="10" class="badge"/>
+  <text x="887" y="236" text-anchor="middle" class="sans num">4</text>
+
+  <polyline points="855,315 888,315 888,332 918,332" class="event"/>
+  <circle cx="871" cy="315" r="10" class="badge"/>
+  <text x="871" y="319" text-anchor="middle" class="sans num">5</text>
+
+  <polyline points="855,412 918,412" class="event"/>
+  <circle cx="887" cy="412" r="10" class="badge"/>
+  <text x="887" y="416" text-anchor="middle" class="sans num">6</text>
+
+  <polyline points="940,437 880,437 880,508 857,508" class="err"/>
+
+  <!-- ============================== QUERY SIDE ============================== -->
+  <rect x="920" y="100" width="380" height="590" rx="12" class="cont-qry"/>
+  <text x="940" y="126" class="sans ct">travel-agency-query-side</text>
+  <text x="940" y="146" class="sans cs">Spring Boot 4, Java 21, hexagonal, port 8081, read side</text>
+
+  <!-- streams -->
+  <rect x="940" y="170" width="340" height="80" rx="8" class="box"/>
+  <text x="955" y="193" class="sans bt">Kafka Streams topology</text>
+  <text x="955" y="214" class="sans bd">booking date range → per-day occupancy</text>
+  <text x="955" y="233" class="sans bd">KTable state store (RocksDB)</text>
+  <rect x="1173" y="219" width="92" height="20" rx="10" fill="#ccfbf1"/>
+  <text x="1219" y="233" text-anchor="middle" class="sans pill" fill="#115e59">exactly-once</text>
+
+  <!-- projection -->
+  <rect x="940" y="285" width="340" height="160" rx="8" class="box"/>
+  <text x="955" y="307" class="sans bt">Projection listeners</text>
+  <text x="955" y="336" class="sans bd">AvailabilityUpdated → status → upsert day</text>
+  <rect x="955" y="348" width="122" height="20" rx="10" fill="#ccfbf1"/>
+  <text x="1016" y="362" text-anchor="middle" class="sans pill" fill="#115e59">idempotent upsert</text>
+  <rect x="1090" y="348" width="150" height="20" rx="10" fill="#f1f5f9"/>
+  <text x="1165" y="362" text-anchor="middle" class="sans pill" fill="#475569">retry w/ backoff → DLT</text>
+  <line x1="955" y1="386" x2="1265" y2="386" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="955" y="416" class="sans bd">HotelUpserted → capacity → re-project days</text>
+  <line x1="1110" y1="445" x2="1110" y2="483" class="sync"/>
+  <text x="1122" y="469" class="sans lbl">upsert day snapshot</text>
+
+  <!-- MongoDB cylinder -->
+  <path d="M940,495 a170,10 0 0 1 340,0 v60 a170,10 0 0 1 -340,0 z" class="box"/>
+  <ellipse cx="1110" cy="495" rx="170" ry="10" class="box"/>
+  <text x="955" y="521" class="sans bt">MongoDB</text>
+  <text x="955" y="543" class="mono bm">availability, hotels</text>
+  <line x1="1110" y1="605" x2="1110" y2="567" class="sync"/>
+  <text x="1122" y="590" class="sans lbl">reads ready snapshots</text>
+
+  <!-- REST -->
+  <rect x="940" y="605" width="340" height="60" rx="8" class="box"/>
+  <text x="955" y="627" class="sans bt">REST API</text>
+  <text x="955" y="649" class="mono bm">GET /api/availability/{hotelId}?from&amp;to</text>
+
+  <!-- ============================== RIGHT ACTOR ============================== -->
+  <g id="actor-customer-browses">
+    <circle cx="1355" cy="600" r="8" class="figure"/>
+    <path d="M1340,636 A15,15 0 0 1 1370,636 Z" class="figure"/>
+    <text x="1355" y="654" text-anchor="middle" class="sans actor">Customer</text>
+    <text x="1355" y="670" text-anchor="middle" class="sans dl">browses availability</text>
+    <polyline points="1328,635 1282,635" class="sync"/>
+  </g>
+
+  <!-- ============================== LEGEND ============================== -->
+  <line x1="170" y1="735" x2="210" y2="735" class="sync"/>
+  <text x="220" y="739" class="sans bd">synchronous call (HTTP, DB)</text>
+  <line x1="420" y1="735" x2="460" y2="735" class="event"/>
+  <text x="470" y="739" class="sans bd">Kafka event (async, Avro)</text>
+  <line x1="650" y1="735" x2="690" y2="735" class="err"/>
+  <text x="700" y="739" class="sans bd">error path</text>
+  <circle cx="800" cy="735" r="10" class="badge"/>
+  <text x="800" y="739" text-anchor="middle" class="sans num">n</text>
+  <text x="818" y="739" class="sans bd">event hop, numbered in flow order</text>
+
+  <text x="170" y="768" class="sans bd">Write side is strongly consistent (per-day row locks, no overbooking). Read side is eventually consistent, typically within milliseconds.</text>
+</svg>
