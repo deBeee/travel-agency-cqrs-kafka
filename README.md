@@ -1,6 +1,6 @@
 # Travel Agency - hotel booking with CQRS and Kafka
 
-An event-driven hotel booking backend in Java 21 and Spring Boot 4, built with CQRS and hexagonal architecture.
+An event-driven hotel booking backend in Java 25 and Spring Boot 4, built with CQRS and hexagonal architecture.
 Bookings go to a command side that prevents overbooking with row-level locks in MySQL, availability is served by a
 query side backed by MongoDB, and the two services communicate only through Apache Kafka. I built it to learn Kafka
 on something closer to a real system than a hello-world example, so it covers a transactional outbox, Kafka Streams
@@ -8,7 +8,7 @@ with a state store, Avro schemas kept in Schema Registry, and consumer error han
 topics.
 
 Core:<br>
-![Java 21](https://img.shields.io/badge/21-Java-ED8B00?style=for-the-badge)
+![Java 25](https://img.shields.io/badge/25-Java-ED8B00?style=for-the-badge)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-F2F4F9?style=for-the-badge&logo=springboot&logoColor=6DB33F)
 ![Apache Maven](https://img.shields.io/badge/Apache_Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
@@ -285,7 +285,7 @@ booking still conflicts after the retries.
 
 ## Running it locally
 
-You only need Docker with Docker Compose. Java 21 is required only if you want to run the tests.
+You only need Docker with Docker Compose. Java 25 is required only if you want to run the tests.
 
 ```bash
 git clone https://github.com/deBeee/travel-agency-cqrs-kafka.git
@@ -308,7 +308,8 @@ MySQL listens on port `3307`, MongoDB on `27018` and Kafka on `9092`. To stop ev
 ### Try it
 
 The ids in the comments assume an empty database, so if yours are different, use the ones you get back. The dates
-have to be today or later.
+have to be today or later. The read side is updated asynchronously, usually within a second, but right after the
+stack starts the very first booking can take a few seconds to show up in step 4.
 
 ```bash
 # 1. Register a hotel with a single room

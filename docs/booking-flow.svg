@@ -183,7 +183,7 @@
 
   <!-- consistency note -->
   <rect x="60" y="553" width="640" height="22" rx="4" class="notebg"/>
-  <text x="380" y="568" text-anchor="middle" class="sans note">Booking confirmed. The read side has not seen it yet (eventual consistency, typically milliseconds).</text>
+  <text x="380" y="568" text-anchor="middle" class="sans note">Booking confirmed. The read side has not seen it yet (eventual consistency, typically within a second).</text>
 
   <!-- ============================== PHASE 2 ============================== -->
   <rect x="420" y="608" width="440" height="148" rx="6" class="frame"/>

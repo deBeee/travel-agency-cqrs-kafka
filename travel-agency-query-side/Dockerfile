@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------------------------
-# STAGE 1: BUILD
+# BUILD
 # -----------------------------------------------------------------------------------------------
 FROM maven:3.9-eclipse-temurin-21-alpine AS build
 
@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/root/.m2 \
 RUN java -Djarmode=tools -jar target/*.jar extract --destination target/extracted
 
 # -----------------------------------------------------------------------------------------------
-# STAGE 2: RUNTIME
+# RUNTIME
 # -----------------------------------------------------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine AS runtime
 

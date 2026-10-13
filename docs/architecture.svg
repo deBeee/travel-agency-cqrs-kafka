@@ -77,7 +77,7 @@
   <!-- ============================== COMMAND SIDE ============================== -->
   <rect x="170" y="100" width="380" height="590" rx="12" class="cont-cmd"/>
   <text x="190" y="126" class="sans ct">travel-agency-command-side</text>
-  <text x="190" y="146" class="sans cs">Spring Boot 4, Java 21, hexagonal, port 8080, write side</text>
+  <text x="190" y="146" class="sans cs">Spring Boot 4, Java 25, hexagonal, port 8080, write side</text>
 
   <!-- REST -->
   <rect x="190" y="170" width="340" height="92" rx="8" class="box"/>
@@ -179,7 +179,7 @@
   <!-- ============================== QUERY SIDE ============================== -->
   <rect x="920" y="100" width="380" height="590" rx="12" class="cont-qry"/>
   <text x="940" y="126" class="sans ct">travel-agency-query-side</text>
-  <text x="940" y="146" class="sans cs">Spring Boot 4, Java 21, hexagonal, port 8081, read side</text>
+  <text x="940" y="146" class="sans cs">Spring Boot 4, Java 25, hexagonal, port 8081, read side</text>
 
   <!-- streams -->
   <rect x="940" y="170" width="340" height="80" rx="8" class="box"/>
@@ -235,5 +235,5 @@
   <text x="800" y="739" text-anchor="middle" class="sans num">n</text>
   <text x="818" y="739" class="sans bd">event hop, numbered in flow order</text>
 
-  <text x="170" y="768" class="sans bd">Write side is strongly consistent (per-day row locks, no overbooking). Read side is eventually consistent, typically within milliseconds.</text>
+  <text x="170" y="768" class="sans bd">Write side is strongly consistent (per-day row locks, no overbooking). Read side is eventually consistent, typically within a second.</text>
 </svg>
