@@ -348,19 +348,6 @@ curl -s -X PUT localhost:8080/api/hotels/1 \
 # The same GET as in step 4 now returns capacity 10, freeRooms 9 and status AVAILABLE
 ```
 
-On Windows you can run these commands in Git Bash, or import the Postman collection from [`postman/`](postman/),
-which goes through a similar scenario.
-
-## What I would add next
-
-- Deduplicating `BookingCreated` by booking id in a state store before the `flatMap`. The outbox delivers at least
-  once, and `exactly_once_v2` only covers processing inside the topology, so a duplicate on the input topic would
-  currently be counted twice.
-- Booking cancellations. Keying every topic by `hotelId` already guarantees that a `BookingCancelled` event can't be
-  processed before the booking it cancels.
-- Exponential backoff in the outbox relay with a `next_attempt_at` column, so it doesn't retry every second during a
-  broker outage.
-
 [jpa-daily]: travel-agency-command-side/src/main/java/io/github/debeee/travelagency/command/infrastructure/persistence/repository/JpaDailyAvailabilityRepository.java
 [daily-availability]: travel-agency-command-side/src/main/java/io/github/debeee/travelagency/command/domain/model/DailyAvailability.java
 [tx-booking]: travel-agency-command-side/src/main/java/io/github/debeee/travelagency/command/infrastructure/tx/TransactionalCreateBookingUseCase.java
