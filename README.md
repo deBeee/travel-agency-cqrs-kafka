@@ -8,27 +8,27 @@ with a state store, Avro schemas kept in Schema Registry, and consumer error han
 topics.
 
 Core:<br>
-![Java 25](https://img.shields.io/badge/25-Java-ED8B00?style=for-the-badge)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-F2F4F9?style=for-the-badge&logo=springboot&logoColor=6DB33F)
-![Apache Maven](https://img.shields.io/badge/Apache_Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)
+![Java 25](https://img.shields.io/badge/25-Java-ED8B00?style=for-the-badge)&nbsp;
+![Spring Boot 4.0](https://img.shields.io/badge/4.0-Spring_Boot-F2F4F9?style=for-the-badge&logo=springboot&logoColor=6DB33F)&nbsp;
+![Apache Maven](https://img.shields.io/badge/Apache_Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)&nbsp;
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 Messaging:<br>
-![Apache Kafka](https://img.shields.io/badge/Apache_Kafka-F2F4F9?style=for-the-badge&logo=apachekafka&logoColor=231F20)
-![Kafka Streams](https://img.shields.io/badge/Kafka_Streams-6E6E6E?style=for-the-badge&logo=apachekafka&logoColor=white)
-![Apache Avro](https://img.shields.io/badge/Apache_Avro-1F6FEB?style=for-the-badge)
-![Schema Registry](https://img.shields.io/badge/Schema_Registry-0E7C86?style=for-the-badge)
+![Apache Kafka (KRaft)](https://img.shields.io/badge/KRaft-Apache_Kafka-F2F4F9?style=for-the-badge&logo=apachekafka&logoColor=white)&nbsp;
+![Kafka Streams](https://img.shields.io/badge/Kafka_Streams-6E6E6E?style=for-the-badge&logo=apachekafka&logoColor=white)&nbsp;
+![Apache Avro](https://img.shields.io/badge/Apache_Avro-1F6FEB?style=for-the-badge)&nbsp;
+![Confluent Schema Registry](https://img.shields.io/badge/Confluent-Schema_Registry-0E7C86?style=for-the-badge)
 
 Databases:<br>
-![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![Hibernate](https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)&nbsp;
+![Hibernate](https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=hibernate&logoColor=white)&nbsp;
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 
 Testing:<br>
-![JUnit5](https://img.shields.io/badge/JUnit5-25A162?style=for-the-badge&logo=junit5&logoColor=white)
-![AssertJ](https://img.shields.io/badge/AssertJ-000080?style=for-the-badge)
-![Mockito](https://img.shields.io/badge/Mockito-78A641?style=for-the-badge)
-![Testcontainers](https://img.shields.io/badge/Testcontainers-9B489A?style=for-the-badge)
+![JUnit 6](https://img.shields.io/badge/6-JUnit-25A162?style=for-the-badge)&nbsp;
+![AssertJ](https://img.shields.io/badge/AssertJ-000080?style=for-the-badge)&nbsp;
+![Mockito](https://img.shields.io/badge/Mockito-78A641?style=for-the-badge)&nbsp;
+![Testcontainers](https://img.shields.io/badge/Testcontainers-9B489A?style=for-the-badge)&nbsp;
 ![Awaitility](https://img.shields.io/badge/Awaitility-6DA500?style=for-the-badge)
 
 ## Table of contents
@@ -255,7 +255,7 @@ tests (ending with `IT`, run by Failsafe) start real MySQL, Kafka and MongoDB co
 
 | Level | What is tested | Tools |
 |---|---|---|
-| Domain and application | the per-day capacity rule, status thresholds, the order of calls in the services (reserve the days, save the booking, write the outbox row) and that nothing is saved when a booking is rejected | JUnit 5, BDDMockito, AssertJ |
+| Domain and application | the per-day capacity rule, status thresholds, the order of calls in the services (reserve the days, save the booking, write the outbox row) and that nothing is saved when a booking is rejected | JUnit 6, BDDMockito, AssertJ |
 | Infrastructure units | the outbox relay (a bad payload goes to the dead-letter table, a broker failure keeps the row and stops the batch, the log level goes up), DLT routing and the capacity cache | Mockito, `OutputCaptureExtension` |
 | Kafka Streams | one record per day, overlapping bookings adding up, separate counters for each hotel and the content of the state store | `TopologyTestDriver`, `mock://` Schema Registry |
 | Web layer | request validation and the HTTP status returned for each error (400, 404, 405, 409, 415, 500) | `@WebMvcTest` |
